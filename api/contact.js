@@ -1,6 +1,7 @@
+// api/contact.js — Vercel Serverless Function
 import nodemailer from "nodemailer";
 
-export async function sendLeadEmails(lead) {
+async function sendLeadEmails(lead) {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
@@ -28,7 +29,7 @@ export async function sendLeadEmails(lead) {
         <tr><td style="padding:10px 0;color:#999;width:120px;border-bottom:1px solid #f5f5f5;">Name</td><td style="padding:10px 0;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5;">${lead.name}</td></tr>
         <tr><td style="padding:10px 0;color:#999;border-bottom:1px solid #f5f5f5;">Email</td><td style="padding:10px 0;border-bottom:1px solid #f5f5f5;"><a href="mailto:${lead.email}" style="color:#1D9E75;">${lead.email}</a></td></tr>
         <tr><td style="padding:10px 0;color:#999;border-bottom:1px solid #f5f5f5;">Phone</td><td style="padding:10px 0;border-bottom:1px solid #f5f5f5;"><a href="tel:${lead.phone}" style="color:#1D9E75;">${lead.phone}</a></td></tr>
-        <tr><td style="padding:10px 0;color:#999;border-bottom:1px solid #f5f5f5;">Project</td><td style="padding:10px 0;border-bottom:1px solid #f5f5f5;color:#111;">${lead.projectType}</td></tr>
+        <tr><td style="padding:10px 0;color:#999;border-bottom:1px solid #f5f5f5;">Project</td><td style="padding:10px 0;color:#111;border-bottom:1px solid #f5f5f5;">${lead.projectType}</td></tr>
         <tr><td style="padding:10px 4px 10px 0;color:#999;vertical-align:top;">Message</td><td style="padding:10px 0;color:#111;line-height:1.6;">${lead.message.replace(/\n/g, "<br/>")}</td></tr>
       </table>
     </div>
@@ -49,7 +50,7 @@ export async function sendLeadEmails(lead) {
       <p style="font-size:14px;color:#555;margin:0 0 8px;">In a hurry? WhatsApp us directly:</p>
       <a href="https://wa.me/919791158504" style="display:inline-block;background:#25D366;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">💬 WhatsApp Us</a>
       <hr style="border:none;border-top:1px solid #f0f0f0;margin:28px 0 16px;"/>
-      <p style="font-size:12px;color:#aaa;margin:0;">GeLoper Technology · Chennai, Tamil Nadu, India<br/>gelopertech@gmail.com · +91 97911 58504</p>
+      <p style="font-size:12px;color:#aaa;margin:0;">GeLoper Technology · Chennai, Tamil Nadu, India<br/>sciencedotbusiness@gmail.com · +91 97911 58504</p>
     </div>
   </div>`;
 
@@ -66,4 +67,71 @@ export async function sendLeadEmails(lead) {
     subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
     html: clientHtml,
   });
+}
+
+async function logLeadToNotion(lead) {
+  const NOTION_TOKEN = process.env.NOTION_TOKEN;
+  const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID;
+
+  const now = new Date().toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+
+  const response = await fetch("https://api.notion.com/v1/pages", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${NOTION_TOKEN}`,
+      "Content-Type": "application/json",
+      "Notion-Version": "2022-06-28",
+    },
+    body: JSON.stringify({
+      parent: { database_id: NOTION_DATABASE_ID },
+      properties: {
+        Name:           { title:        [{ text: { content: lead.name } }] },
+        Email:          { email:        lead.email },
+        Phone:          { phone_number: lead.phone },
+        "Project Type": { rich_text:    [{ text: { content: lead.projectType } }] },
+        Message:        { rich_text:    [{ text: { content: lead.message } }] },
+        Status:         { rich_text:    [{ text: { content: "New Lead" } }] },
+        "Submitted At": { rich_text:    [{ text: { content: now } }] },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(`Notion error: ${JSON.stringify(err)}`);
+  }
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const { name, email, phone, projectType, message } = req.body;
+  if (!name || !email || !phone || !projectType || !message)
+    return res.status(400).json({ error: "All fields are required." });
+
+  const lead = { name, email, phone, projectType, message };
+
+  try {
+    const [emailResult, notionResult] = await Promise.allSettled([
+      sendLeadEmails(lead),
+      logLeadToNotion(lead),
+    ]);
+
+    if (emailResult.status === "rejected") {
+      console.error("Email failed:", emailResult.reason?.message);
+      return res.status(500).json({ error: "Email failed: " + emailResult.reason?.message });
+    }
+    if (notionResult.status === "rejected") {
+      console.error("Notion failed:", notionResult.reason?.message);
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("Error:", err);
+    return res.status(500).json({ error: "Something went wrong." });
+  }
 }
