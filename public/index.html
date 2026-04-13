@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<a href="/api/contact">
+  <img src="/icon.jpeg" width="30" />
+</a>
+<title>GeLoper Technology — Dream It, We Build It. Instantly.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#1D9E75;
+  --brand-dark:#0F6E56;
+  --brand-light:#E1F5EE;
+  --brand-muted:#9FE1CB;
+  --text:#0d0d0d;
+  --text-muted:#666;
+  --border:#ebebeb;
+  --bg:#fff;
+  --bg2:#f8f8f6;
+  --radius:12px;
+  --radius-lg:20px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',sans-serif;color:var(--text);background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--brand);border-radius:4px}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.au{animation:fadeUp 0.65s ease forwards;opacity:0}
+.d1{animation-delay:0.1s}.d2{animation-delay:0.22s}.d3{animation-delay:0.34s}.d4{animation-delay:0.46s}.d5{animation-delay:0.58s}.d6{animation-delay:0.7s}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:60px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(1rem,4vw,2.5rem);
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid transparent;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+nav.scrolled{border-color:var(--border);box-shadow:0 2px 24px rgba(0,0,0,0.05)}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px;color:var(--text);text-decoration:none;display:flex;align-items:baseline;gap:4px}
+.logo span{color:var(--brand)}
+.logo em{font-size:10px;font-weight:400;color:#bbb;font-style:normal;font-family:'Manrope',sans-serif}
+.nav-links{display:flex;align-items:center;gap:1.8rem;list-style:none}
+.nav-links a{font-size:13px;color:var(--text-muted);text-decoration:none;font-weight:500;cursor:pointer;transition:color 0.2s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:1.5px;background:var(--brand);transition:width 0.25s}
+.nav-links a:hover{color:var(--text)}.nav-links a:hover::after{width:100%}
+.btn-nav{background:var(--text);color:#fff;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-family:'Manrope',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.2px}
+.btn-nav:hover{background:var(--brand);transform:translateY(-1px)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:6px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all 0.25s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-menu{
+  display:none;position:fixed;inset:0;z-index:199;
+  background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);
+  flex-direction:column;align-items:center;justify-content:center;gap:2.2rem;
+}
+.mobile-menu.open{display:flex;animation:fadeIn 0.2s ease}
+.mobile-menu a{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:var(--text);text-decoration:none;cursor:pointer;transition:color 0.2s}
+.mobile-menu a:hover{color:var(--brand)}
+.mobile-menu .btn-nav{font-size:15px;padding:14px 40px;margin-top:0.5rem}
+@media(max-width:768px){
+  .nav-links,nav>.btn-nav{display:none!important}
+  .hamburger{display:flex}
+}
+
+/* ── HERO ── */
+#hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:7rem 1.5rem 4rem;text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle,#e0e0e0 1px,transparent 1px);
+  background-size:30px 30px;opacity:0.35;pointer-events:none;
+}
+.hero-glow{
+  position:absolute;top:-10%;left:50%;transform:translateX(-50%);
+  width:700px;height:500px;
+  background:radial-gradient(ellipse,rgba(29,158,117,0.1) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{position:relative;z-index:1;max-width:780px;margin:0 auto}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--brand-light);color:var(--brand-dark);
+  font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:20px;
+  margin-bottom:1.8rem;letter-spacing:0.4px;border:1px solid rgba(29,158,117,0.2);
+}
+.badge-dot{width:6px;height:6px;background:var(--brand);border-radius:50%;animation:pulse 2s infinite}
+h1.hero-title{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(38px,7.5vw,72px);
+  font-weight:800;line-height:1.06;letter-spacing:-2.5px;color:var(--text);
+  margin-bottom:1.4rem;
+}
+h1.hero-title em{font-style:normal;color:var(--brand)}
+.hero-sub{font-size:clamp(15px,2vw,17px);color:var(--text-muted);line-height:1.8;max-width:500px;margin:0 auto 2.4rem;font-weight:400}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--brand);color:#fff;border:none;padding:14px 30px;border-radius:9px;font-size:14px;font-family:'Manrope',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block;letter-spacing:0.2px}
+.btn-primary:hover{background:var(--brand-dark);transform:translateY(-2px);box-shadow:0 10px 28px rgba(29,158,117,0.3)}
+.btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--border);padding:13px 28px;border-radius:9px;font-size:14px;font-family:'Manrope',sans-serif;font-weight:500;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand)}
+.hero-stats{display:flex;justify-content:center;gap:clamp(1.5rem,5vw,4rem);margin-top:4rem;padding-top:2.5rem;border-top:1px solid var(--border);flex-wrap:wrap}
+.stat-num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--text);line-height:1}
+.stat-label{font-size:20px;color:#24cf0d;margin-top:5px;font-weight:500;letter-spacing:0.3px}
+
+/* ── SECTIONS ── */
+section{padding:clamp(4rem,8vw,6rem) 1.5rem}
+.bg-alt{background:var(--bg2)}
+.container{max-width:1020px;margin:0 auto}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--brand);text-transform:uppercase;margin-bottom:0.6rem}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,40px);font-weight:800;letter-spacing:-1px;color:var(--text);margin-bottom:0.8rem;line-height:1.15}
+.section-sub{font-size:15px;color:var(--text-muted);max-width:480px;line-height:1.75;font-weight:400}
+.section-head{margin-bottom:3rem}
+.section-head.center{text-align:center}.section-head.center .section-sub{margin:0 auto}
+
+/* ── SERVICES ── */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:2.5rem}
+.service-card{background:#fff;padding:2rem 1.8rem;transition:background 0.2s}
+.service-card:hover{background:#f8fffe}
+.service-icon{width:42px;height:42px;border-radius:10px;background:var(--brand-light);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:18px}
+.service-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.service-desc{font-size:13px;color:var(--text-muted);line-height:1.7}
+.tech-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:2rem}
+.tech-tag{background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:12.5px;color:#555;font-weight:500;transition:all 0.2s;cursor:default}
+.tech-tag:hover{border-color:var(--brand);color:var(--brand)}
+
+/* ── WHY ── */
+.reasons-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.reason-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1.6rem;transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s}
+.reason-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.06);border-color:var(--brand-muted)}
+.reason-icon{font-size:22px;margin-bottom:0.8rem}
+.reason-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:5px;color:var(--text)}
+.reason-desc{font-size:13px;color:var(--text-muted);line-height:1.7}
+
+/* ── PROCESS ── */
+.process-layout{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start}
+@media(max-width:768px){.process-layout{grid-template-columns:1fr;gap:2.5rem}}
+.process-highlight{margin-top:2rem;padding:1.5rem 1.8rem;background:var(--brand-light);border-radius:var(--radius);border-left:3px solid var(--brand)}
+.process-highlight-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--brand-dark);margin-bottom:5px}
+.process-highlight-text{font-size:13px;color:var(--brand-dark);line-height:1.65;opacity:0.85}
+.process-steps{display:flex;flex-direction:column}
+.process-step{display:flex;gap:1.2rem;padding:1.3rem 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.process-step:last-child{border-bottom:none}
+.step-num{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--brand);min-width:28px;padding-top:2px;letter-spacing:0.5px}
+.step-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.step-desc{font-size:13px;color:var(--text-muted);line-height:1.65}
+
+/* ── WORK ── */
+.work-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.work-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:#fff;transition:transform 0.2s,box-shadow 0.2s}
+.work-card:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,0.09)}
+.work-color-block{height:100px;padding:1.4rem;display:flex;align-items:flex-start}
+.work-tag{display:inline-block;color:#fff;font-size:11px;font-weight:600;padding:3px 12px;border-radius:20px;letter-spacing:0.4px}
+.work-content{padding:1.4rem 1.5rem}
+.work-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:7px}
+.work-desc{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:1.1rem}
+.work-stack{display:flex;flex-wrap:wrap;gap:5px}
+.stack-tag{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:3px 10px;font-size:11.5px;color:#666;font-weight:500}
+.work-cta{text-align:center;margin-top:2.5rem}
+.work-cta p{font-size:14px;color:#aaa;margin-bottom:1rem}
+.btn-outline{background:transparent;color:var(--brand);border:1.5px solid var(--brand);padding:11px 26px;border-radius:9px;font-size:14px;font-family:'Manrope',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn-outline:hover{background:var(--brand);color:#fff}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;margin-bottom:2rem}
+.plan{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;position:relative;transition:transform 0.2s,box-shadow 0.2s}
+.plan:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,0.07)}
+.plan.featured{border-color:var(--brand);border-width:2px;background:linear-gradient(135deg,#fdfffe 0%,#f0fdf8 100%)}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;white-space:nowrap;letter-spacing:0.4px}
+.plan-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:0.6rem}
+.plan-price{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--text);margin-bottom:0.4rem}
+.plan-price span{font-size:14px;font-weight:400;color:var(--text-muted)}
+.plan-note{font-size:12.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5}
+.plan-features{list-style:none;margin-bottom:1.8rem;display:flex;flex-direction:column;gap:10px}
+.plan-features li{font-size:13px;color:var(--text-muted);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.check{color:var(--brand);font-weight:700;font-size:14px;margin-top:1px;flex-shrink:0}
+.plan-btn{width:100%;padding:12px;border-radius:9px;font-size:14px;font-family:'Manrope',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;letter-spacing:0.2px}
+.plan-btn.filled{background:var(--brand);color:#fff}.plan-btn.filled:hover{background:var(--brand-dark)}
+.plan-btn.outline{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}.plan-btn.outline:hover{background:var(--brand);color:#fff}
+.pricing-note{text-align:center;font-size:13.5px;color:var(--text-muted)}
+.pricing-note a{color:var(--brand);cursor:pointer;font-weight:600;text-decoration:none}
+
+/* ── TESTIMONIALS ── */
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}
+.testi{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.8rem;position:relative;transition:transform 0.2s,box-shadow 0.2s}
+.testi:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.06)}
+.testi::before{content:'"';font-family:'Syne',sans-serif;font-size:60px;color:var(--brand-light);position:absolute;top:12px;left:18px;line-height:1}
+.testi-text{font-size:14px;color:#444;line-height:1.8;margin-bottom:1.2rem;padding-top:1.5rem;font-style:italic}
+.testi-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+.testi-role{font-size:12px;color:#aaa;margin-top:2px}
+
+/* ── CTA BANNER ── */
+.cta-banner{
+  background:var(--text);color:#fff;
+  padding:clamp(3rem,6vw,5rem) 1.5rem;text-align:center;
+  position:relative;overflow:hidden;
+}
+.cta-banner::before{content:'';position:absolute;top:-50%;left:-20%;width:500px;height:500px;background:radial-gradient(circle,rgba(29,158,117,0.15),transparent 70%);pointer-events:none}
+.cta-banner::after{content:'';position:absolute;bottom:-50%;right:-20%;width:400px;height:400px;background:radial-gradient(circle,rgba(29,158,117,0.1),transparent 70%);pointer-events:none}
+.cta-banner h2{font-family:'Syne',sans-serif;font-size:clamp(26px,4vw,42px);font-weight:800;letter-spacing:-1px;margin-bottom:0.8rem;position:relative;z-index:1}
+.cta-banner p{font-size:15px;color:rgba(255,255,255,0.6);margin-bottom:2rem;position:relative;z-index:1}
+.btn-white{background:#fff;color:var(--text);border:none;padding:14px 32px;border-radius:9px;font-size:14px;font-family:'Manrope',sans-serif;font-weight:700;cursor:pointer;transition:all 0.2s;position:relative;z-index:1}
+.btn-white:hover{background:var(--brand);color:#fff;transform:translateY(-2px)}
+
+/* ── CONTACT ── */
+.contact-layout{display:grid;grid-template-columns:1fr 1.4fr;gap:4rem;align-items:start}
+@media(max-width:860px){.contact-layout{grid-template-columns:1fr;gap:2.5rem}}
+.contact-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:1.2rem}
+.contact-item-icon{width:38px;height:38px;background:var(--brand-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.contact-item-label{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.contact-item-val{font-size:14px;color:var(--text);font-weight:500}
+.contact-item-val a{color:var(--text);text-decoration:none}.contact-item-val a:hover{color:var(--brand)}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.form-row{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form-group label{font-size:12.5px;font-weight:600;color:#555;letter-spacing:0.2px}
+.form-group input,.form-group select,.form-group textarea{
+  padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;
+  font-size:14px;font-family:'Manrope',sans-serif;color:var(--text);
+  background:#fff;outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+  width:100%;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(29,158,117,0.1)}
+.form-group textarea{resize:vertical;min-height:110px;line-height:1.6}
+.form-group select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.form-submit{width:100%;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:9px;font-size:15px;font-family:'Manrope',sans-serif;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;margin-top:4px}
+.form-submit:hover:not(:disabled){background:var(--brand-dark);transform:translateY(-1px);box-shadow:0 8px 24px rgba(29,158,117,0.3)}
+.form-submit:disabled{opacity:0.65;cursor:not-allowed}
+.form-success{display:none;margin-top:14px;padding:14px 18px;background:#E1F5EE;color:#0F6E56;border-radius:9px;font-size:14px;font-weight:600;text-align:center;border:1px solid rgba(29,158,117,0.2)}
+.form-error{display:none;margin-top:14px;padding:14px 18px;background:#fff0f0;color:#c0392b;border-radius:9px;font-size:13.5px;border:1px solid #fcd0d0}
+
+/* ── FOOTER ── */
+footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2rem}
+.footer-inner{max-width:1020px;margin:0 auto}
+.footer-top{display:grid;grid-template-columns:1fr auto;gap:3rem;margin-bottom:2.5rem;align-items:start}
+@media(max-width:640px){.footer-top{grid-template-columns:1fr}.footer-cols{display:none}}
+.footer-brand-sub{font-size:13px;color:rgba(255,255,255,0.4);margin-top:8px;line-height:1.6}
+.footer-cols{display:flex;gap:3.5rem}
+.footer-col{display:flex;flex-direction:column;gap:10px}
+.footer-col-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.footer-col a,.footer-col span{font-size:13px;color:rgba(255,255,255,0.6);text-decoration:none;cursor:pointer;transition:color 0.2s}
+.footer-col a:hover{color:#fff}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;gap:10px}
+.footer-copy{font-size:12px;color:rgba(255,255,255,0.35)}
+.footer-legal{display:flex;gap:1.2rem}
+.footer-legal span{font-size:12px;color:rgba(255,255,255,0.35);cursor:pointer;transition:color 0.2s}
+.footer-legal span:hover{color:rgba(255,255,255,0.7)}
+
+/* ── SCROLL HINT ── */
+.scroll-hint{display:none}
+.scroll-hint span{font-size:10px;color:#bbb;letter-spacing:2.5px;text-transform:uppercase}
+.scroll-line{width:1px;height:32px;background:linear-gradient(to bottom,var(--brand),transparent);animation:float 2s infinite}
+
+/* ── ABOUT ── */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+@media(max-width:768px){.about-grid{grid-template-columns:1fr;gap:2rem}}
+.about-visual{background:var(--brand-light);border-radius:var(--radius-lg);padding:2.5rem;display:flex;flex-direction:column;gap:1rem}
+.about-stat{background:#fff;border-radius:10px;padding:1.2rem 1.5rem;border:1px solid rgba(29,158,117,0.15)}
+.about-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--brand)}
+.about-stat-label{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500}
+
+
+/* ── ABOUT ── */
+.about-section { background: var(--bg2); }
+.about-text { font-size: 14.5px; color: #444; line-height: 1.85; margin-bottom: 1rem; }
+.about-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 1rem 0 1rem 0; }
+.about-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #444; }
+.about-list li::before { content: "✓"; color: var(--brand); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+/* ── RESPONSIVE FIXES ── */
+@media(max-width:600px){
+  h1.hero-title{letter-spacing:-1.5px}
+  .hero-stats{gap:1.5rem}
+  .stat-num{font-size:45px;font-family: sans-serif; }
+  .pricing-grid{grid-template-columns:1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .services-grid{grid-template-columns:1fr}
+  .work-grid{grid-template-columns:1fr}
+  .reasons-grid{grid-template-columns:1fr}
+  .work-cta{margin-top:1.5rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a class="logo" href="#">Ge<span>L</span>oper<em>Technology</em></a>
+  <ul class="nav-links">
+    <li><a onclick="scrollToSection('about')">About</a></li>
+    <li><a onclick="scrollToSection('services')">Services</a>
+    <li><a onclick="scrollToSection('process')">Process</a></li>
+    <li><a onclick="scrollToSection('work')">Work</a></li>
+    <li><a onclick="scrollToSection('pricing')">Pricing</a></li>
+    <li><a onclick="scrollToSection('contact')">Contact</a></li>
+  </ul>
+  <button class="btn-nav" onclick="scrollToSection('contact')">Get a Quote</button>
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a onclick="closeMenu();scrollToSection('about')">About</a>
+  <a onclick="closeMenu();scrollToSection('services')">Services</a>
+  <a onclick="closeMenu();scrollToSection('process')">Process</a>
+  <a onclick="closeMenu();scrollToSection('work')">Work</a>
+  <a onclick="closeMenu();scrollToSection('pricing')">Pricing</a>
+  <a onclick="closeMenu();scrollToSection('contact')">Contact</a>
+  <button class="btn-nav" onclick="closeMenu();scrollToSection('contact')">Get a Quote →</button>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="badge au d1"><span class="badge-dot"></span>Chennai-based Dev Agency</div>
+    <h1 class="hero-title au d2">We Build <em>Digital</em><br/>Products That Work.</h1>
+    <p class="hero-sub au d3">From landing pages to full-scale web apps — GeLoper delivers fast, clean, and affordable development for Indian businesses.</p>
+    <div class="hero-btns au d4">
+      <button class="btn-primary" onclick="scrollToSection('contact')">Start a Project →</button>
+      <button class="btn-ghost" onclick="scrollToSection('work')">See Our Work</button>
+    </div>
+    <div class="hero-stats au d5">
+      <div><div class="stat-num" style="font-family: sans-serif; font-size: 45px;">15+</div><div class="stat-label">Projects Delivered</div></div>
+      <div><div class="stat-num" style="font-family: sans-serif; font-size: 45px;">98%</div><div class="stat-label">Client Satisfaction</div></div>
+      <div><div class="stat-num" style="font-family: sans-serif; font-size: 45px;">24hr</div><div class="stat-label">Response Time</div></div>
+      <div><div class="stat-num" style="font-family: sans-serif; font-size: 45px;">4.5★</div><div class="stat-label">Average Rating</div></div>
+    </div>
+  </div>
+  
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="about-section">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-tag">Who we are</div>
+      <h2 class="section-title">About Us</h2>
+      <p class="section-sub">"A student with a passion for building real-world solutions."</p>
+    </div>
+    <p class="about-text">We are passionate college students doing our undergraduate in a private college and freelance developers who enjoy building modern, user-friendly websites. Along with our academic journey, we work on real-world projects to gain practical experience and deliver quality solutions to clients.</p>
+    <p class="about-text">We specialize in creating responsive and clean websites using technologies like HTML, CSS, JavaScript, and frameworks like React. We constantly learn new tools and improve our skills to stay updated with current industry trends.</p>
+    <p class="about-text">As student freelancers, we focus on:</p>
+    <ul class="about-list">
+      <li>Delivering projects on time</li>
+      <li>Maintaining clear communication with clients</li>
+      <li>Building simple, effective, and affordable solutions</li>
+    </ul>
+    <p class="about-text">Our journey started with curiosity for coding, and over time we have worked on multiple personal and client projects that helped us grow both technically and professionally.</p>
+    <p class="about-text">Our goal is to help individuals and businesses build their online presence while continuing to learn and grow as developers.</p>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services" class="bg-alt">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-tag">What we do</div>
+      <h2 class="section-title">Services We Offer</h2>
+      <p class="section-sub">Full-stack development from design to deployment — everything your business needs online.</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">🌐</div>
+        <div class="service-title">Web Development</div>
+        <div class="service-desc">Custom websites and web applications built with React, Next.js, and Node.js. Fast, SEO-friendly, and mobile-first.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">📱</div>
+        <div class="service-title">Mobile Apps</div>
+        <div class="service-desc">Cross-platform Flutter apps for Android and iOS. One codebase, native performance, beautiful UI.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🎨</div>
+        <div class="service-title">UI/UX Design</div>
+        <div class="service-desc">Clean, modern interfaces that users love. Figma prototypes to pixel-perfect implementation.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🛒</div>
+        <div class="service-title">E-Commerce</div>
+        <div class="service-desc">Full e-commerce platforms with Razorpay integration, inventory management, and admin dashboards.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">⚙️</div>
+        <div class="service-title">API & Backend</div>
+        <div class="service-desc">Scalable REST APIs, database design, authentication systems, and third-party integrations.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🛠️</div>
+        <div class="service-title">Maintenance</div>
+        <div class="service-desc">Ongoing support, bug fixes, performance optimization, and feature additions after launch.</div>
+      </div>
+    </div>
+    <div class="tech-row">
+      <span class="tech-tag">React.js</span><span class="tech-tag">Next.js</span>
+      <span class="tech-tag">Node.js</span><span class="tech-tag">Flask</span>
+      <span class="tech-tag">Spring Boot</span><span class="tech-tag">Flutter</span>
+      <span class="tech-tag">MySQL</span><span class="tech-tag">MongoDB</span>
+      <span class="tech-tag">Firebase</span><span class="tech-tag">Tailwind CSS</span>
+      <span class="tech-tag">Razorpay</span><span class="tech-tag">Cloudinary</span>
+      <span class="tech-tag">JWT Auth</span><span class="tech-tag">REST APIs</span>
+      <span class="tech-tag">Vercel</span><span class="tech-tag">AWS</span>
+    </div>
+  </div>
+</section>
+
+<!-- WHY GELOPER -->
+<section>
+  <div class="container">
+    <div class="section-head">
+      <div class="section-tag">Why us</div>
+      <h2 class="section-title">Why GeLoper?</h2>
+      <p class="section-sub">We're not just another dev shop. Here's what makes us different.</p>
+    </div>
+    <div class="reasons-grid">
+      <div class="reason-card"><div class="reason-icon">⚡</div><div class="reason-title">Fast Delivery</div><div class="reason-desc">We move quickly without cutting corners. Deadlines are commitments, not estimates.</div></div>
+      <div class="reason-card"><div class="reason-icon">💡</div><div class="reason-title">Clean Code</div><div class="reason-desc">Maintainable, scalable, and built to last. No spaghetti, no shortcuts.</div></div>
+      <div class="reason-card"><div class="reason-icon">💬</div><div class="reason-title">Clear Communication</div><div class="reason-desc">You're always in the loop. No jargon, no ghosting, no surprises.</div></div>
+      <div class="reason-card"><div class="reason-icon">💰</div><div class="reason-title">Affordable Pricing</div><div class="reason-desc">Premium quality at Indian market rates. Honest, transparent pricing always.</div></div>
+      <div class="reason-card"><div class="reason-icon">🔒</div><div class="reason-title">Secure & Reliable</div><div class="reason-desc">Security-first approach on every project. Your data and your users are safe.</div></div>
+      <div class="reason-card"><div class="reason-icon">🤝</div><div class="reason-title">Post-Launch Support</div><div class="reason-desc">We're here even after you go live. Real support from the people who built it.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process" class="bg-alt">
+  <div class="container">
+    <div class="process-layout">
+      <div>
+        <div class="section-tag">How we work</div>
+        <h2 class="section-title">Simple, Clear Process</h2>
+        <p class="section-sub">No confusion, no surprises. Just a clean path from idea to live product — every single time.</p>
+        <div class="process-highlight">
+          <div class="process-highlight-title">Dream It, We Build It. Instantly.</div>
+          <div class="process-highlight-text">Fast delivery, quality code, and communication that actually works. That's our promise.</div>
+        </div>
+      </div>
+      <div class="process-steps">
+        <div class="process-step"><div class="step-num">01</div><div><div class="step-title">Discover</div><div class="step-desc">We understand your goals, audience, and requirements through a quick call or brief form.</div></div></div>
+        <div class="process-step"><div class="step-num">02</div><div><div class="step-title">Plan</div><div class="step-desc">We propose a clear roadmap — timeline, tech stack, milestones, and pricing. No surprises.</div></div></div>
+        <div class="process-step"><div class="step-num">03</div><div><div class="step-title">Build</div><div class="step-desc">Our team gets to work. You get regular updates and can review progress at every milestone.</div></div></div>
+        <div class="process-step"><div class="step-num">04</div><div><div class="step-title">Launch</div><div class="step-desc">We deploy, test, and hand over everything — source code, hosting setup, full documentation.</div></div></div>
+        <div class="process-step"><div class="step-num">05</div><div><div class="step-title">Support</div><div class="step-desc">Need changes after launch? We've got you covered with ongoing maintenance and support.</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORK -->
+<section id="work">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-tag">Portfolio</div>
+      <h2 class="section-title">Work We're Proud Of</h2>
+      <p class="section-sub">A few of the projects we've built.</p>
+    </div>
+    <div class="work-grid">
+      <div class="work-card">
+        <a href="https://dhasobuilders.vercel.app/" target="_blank" style="text-decoration:none">
+          <div class="work-color-block" style="background:#E1F5EE"><span class="work-tag" style="background:#1D9E75">Web App</span></div>
+          <div class="work-content">
+            <div class="work-title">Print Portal — for a Private college</div>
+            <div class="work-desc">A complete college print shop management system with order tracking, WhatsApp notifications, PDF uploads, folder management for notes, and a full admin dashboard.</div>
+            <div class="work-stack"><span class="stack-tag">Flask</span><span class="stack-tag">MySQL</span><span class="stack-tag">Cloudinary</span><span class="stack-tag">PDF.js</span></div>
+          </div>
+        </a>
+      </div>
+      <div class="work-card">
+        <a href="https://dhasobuilders.vercel.app/" target="_blank" style="text-decoration:none">
+          <div class="work-color-block" style="background:#EEF2FF"><span class="work-tag" style="background:#b41ab4">Website</span></div>
+          <div class="work-content">
+            <div class="work-title">Dhaso Builders</div>
+            <div class="work-desc">Designed a construction company website where the customers can directly book appointment to the company to discuss about the planning.</div>
+            <div class="work-stack"><span class="stack-tag">React</span><span class="stack-tag">Spring Boot</span><span class="stack-tag">Supabase</span><span class="stack-tag">Vercel</span></div>
+          </div>
+        </a>
+      </div>
+      <div class="work-card">
+        <a href="https://fitzone-gym-jxs4.vercel.app/" target="_blank" style="text-decoration:none">
+          <div class="work-color-block" style="background:#EEF2FF"><span class="work-tag" style="background:#ac8d05">Web App</span></div>
+          <div class="work-content">
+            <div class="work-title">Fitzone-gym</div>
+            <div class="work-desc">Created a web application for a gym to display their plans, timing, trainer and to book an appointment. The booked appointment will be mailed to the admin.</div>
+            <div class="work-stack"><span class="stack-tag">Node.js</span><span class="stack-tag">Spring Boot</span><span class="stack-tag">Supabase</span><span class="stack-tag">Vercel</span></div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top:3rem;margin-bottom:1.5rem">
+      <p class="section-title" style="font-weight:500;font-size:clamp(20px,3vw,28px)">Projects we are working on.</p>
+    </div>
+    <div class="work-grid">
+      <div class="work-card">
+        <div class="work-color-block" style="background:#EEF2FF"><span class="work-tag" style="background:#4F46E5">Dashboard</span></div>
+        <div class="work-content">
+          <div class="work-title">Smart Institutional Dashboard</div>
+          <div class="work-desc">A role-based institutional management dashboard with student, faculty, and admin panels — built at Freshathon 2.0 hackathon for a Private college.</div>
+          <div class="work-stack"><span class="stack-tag">React</span><span class="stack-tag">Spring Boot</span><span class="stack-tag">MySQL</span><span class="stack-tag">JWT</span></div>
+        </div>
+      </div>
+      <div class="work-card">
+        <div class="work-color-block" style="background:#FFF7ED"><span class="work-tag" style="background:#EA580C">Marketplace</span></div>
+        <div class="work-content">
+          <div class="work-title">CampusBazaar</div>
+          <div class="work-desc">A peer-to-peer student marketplace — like OLX for college students — with identity verification, fraud detection, and a full product listing system.</div>
+          <div class="work-stack"><span class="stack-tag">React</span><span class="stack-tag">Flask</span><span class="stack-tag">MySQL</span><span class="stack-tag">Firebase</span></div>
+        </div>
+      </div>
+      <div class="work-card">
+        <div class="work-color-block" style="background:#EEF2FF"><span class="work-tag" style="background:#4F46E5">Billing system</span></div>
+        <div class="work-content">
+          <div class="work-title">Super market billing system</div>
+          <div class="work-desc">A billing system used in super market and to track their.</div>
+          <div class="work-stack"><span class="stack-tag">React</span><span class="stack-tag">Spring Boot</span><span class="stack-tag">MySQL</span><span class="stack-tag">JWT</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="work-cta">
+      <p>Interested in seeing more of our work?</p>
+      <button class="btn-outline" onclick="scrollToSection('contact')">Let's talk about your project →</button>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="bg-alt">
+  <div class="container">
+    <div class="section-head center">
+      <div class="section-tag">Pricing</div>
+      <h2 class="section-title">Transparent, Fair Pricing</h2>
+      <p class="section-sub">Premium quality at Indian market rates. No hidden charges, ever.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="plan">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price" style="font-family: sans-serif;" >₹2,999<span> onwards</span></div>
+        <div class="plan-note">Best for landing pages & small businesses</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span>Static website (up to 5 pages)</li>
+          <li><span class="check">✓</span>Mobile responsive design</li>
+          <li><span class="check">✓</span>Contact form integration</li>
+          <li><span class="check">✓</span>3 months free support</li>
+        </ul>
+        <button class="plan-btn outline" onclick="scrollToSection('contact')">Get Started →</button>
+      </div>
+      <div class="plan featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Business</div>
+        <div class="plan-price" style="font-family: sans-serif;">₹9,999<span> onwards</span></div>
+        <div class="plan-note">For growing businesses needing a full web app</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span>Dynamic website or web app</li>
+          <li><span class="check">✓</span>Admin dashboard panel</li>
+          <li><span class="check">✓</span>Database & API integration</li>
+          <li><span class="check">✓</span>Payment gateway (Razorpay)</li>
+          <li><span class="check">✓</span>6 months free support</li>
+        </ul>
+        <button class="plan-btn filled" onclick="scrollToSection('contact')">Get Started →</button>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price" style="font-family: sans-serif;">Custom</div>
+        <div class="plan-note">Full-scale applications with custom needs</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span>Full web or mobile application</li>
+          <li><span class="check">✓</span>Custom integrations & APIs</li>
+          <li><span class="check">✓</span>Security audit & optimization</li>
+          <li><span class="check">✓</span>Ongoing maintenance plan</li>
+        </ul>
+        <button class="plan-btn outline" onclick="scrollToSection('contact')">Get Started →</button>
+      </div>
+    </div>
+    <p class="pricing-note">Not sure which plan fits? <a onclick="scrollToSection('contact')">Get a free quote →</a></p>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="container">
+    <div class="section-head center">
+      <div class="section-tag">Client stories</div>
+      <h2 class="section-title">What Clients Say</h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi">
+        <div class="testi-text">GeLoper delivered our website faster than expected and the quality was spot on. Great communication throughout the entire process.</div>
+        <div class="testi-name">Arun M.</div><div class="testi-role">Startup Founder, Chennai</div>
+      </div>
+      <div class="testi">
+        <div class="testi-text">They understood exactly what we needed and built it without us having to explain twice. Would absolutely recommend them.</div>
+        <div class="testi-name">Priya S.</div><div class="testi-role">Business Owner, Bangalore</div>
+      </div>
+      <div class="testi">
+        <div class="testi-text">Affordable, professional, and reliable. Best decision we made for our business's online presence. The support after launch was excellent too.</div>
+        <div class="testi-name">Ravi K.</div><div class="testi-role">Small Business Owner, Tamil Nadu</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<div class="cta-banner">
+  <h2>Let's Build Something<br/>Great Together.</h2>
+  <p>Have a project in mind? Drop us a message — we'll get back within 24 hours.</p>
+  <button class="btn-white" onclick="scrollToSection('contact')">Start Your Project →</button>
+</div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-layout">
+      <div>
+        <div class="section-tag">Get in touch</div>
+        <h2 class="section-title">Ready to Start?</h2>
+        <p class="section-sub" style="margin-bottom:2rem">Tell us about your project and we'll get back within 24 hours with a clear plan and pricing.</p>
+        <div class="contact-item">
+          <div class="contact-item-icon">📧</div>
+          <div><div class="contact-item-label">Email</div><div class="contact-item-val"><a href="mailto:sciencedotbusiness@gmail.com">sciencedotbusiness@gmail.com</a></div></div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-item-icon">📱</div>
+          <div><div class="contact-item-label">WhatsApp</div><div class="contact-item-val"><a href="https://wa.me/919791158504">+91 97911 58504</a></div></div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-item-icon">📍</div>
+          <div><div class="contact-item-label">Location</div><div class="contact-item-val">Chennai, Tamil Nadu, India</div></div>
+        </div>
+      </div>
+
+      <form id="contactForm" onsubmit="handleSubmit(event)" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Your Name *</label>
+            <input type="text" id="f-name" placeholder="Name" required/>
+          </div>
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" id="f-email" placeholder="you@company.com" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Phone *</label>
+            <input type="tel" id="f-phone" placeholder="+91 XXXXXXXXXX" required/>
+          </div>
+          <div class="form-group">
+            <label>Project Type *</label>
+            <select id="f-type" required>
+              <option value="">Select...</option>
+              <option>Website</option>
+              <option>Mobile App</option>
+              <option>Web App</option>
+              <option>E-Commerce</option>
+              <option>UI/UX Design</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tell us about your project *</label>
+          <textarea id="f-msg" placeholder="Briefly describe what you need — the more detail the better..." required></textarea>
+        </div>
+        <button type="submit" class="form-submit" id="submitBtn">Send Message →</button>
+        <div class="form-success" id="formSuccess">✅ Message sent! We'll get back to you within 24 hours.</div>
+        <div class="form-error" id="formError"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="logo" style="color:#fff;cursor:default">Ge<span>L</span>oper<em style="color:rgba(255,255,255,0.35)">Technology</em></div>
+        <div class="footer-brand-sub">Dream It, We Build It. Instantly.<br/>Chennai, Tamil Nadu, India.</div>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <div class="footer-col-title">Navigation</div>
+          <a onclick="scrollToSection('services')">Services</a>
+          <a onclick="scrollToSection('process')">Process</a>
+          <a onclick="scrollToSection('work')">Work</a>
+          <a onclick="scrollToSection('pricing')">Pricing</a>
+          <a onclick="scrollToSection('contact')">Contact</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Services</div>
+          <span>Web Development</span>
+          <span>Mobile Apps</span>
+          <span>UI/UX Design</span>
+          <span>E-Commerce</span>
+          <span>API Development</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 GeLoper Technology. All rights reserved.</div>
+      <div class="footer-legal"><span>Privacy Policy</span><span>Terms of Service</span></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+function scrollToSection(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth'})}
+
+function toggleMenu(){
+  const menu=document.getElementById('mobileMenu');
+  const btn=document.getElementById('hamburgerBtn');
+  menu.classList.toggle('open');
+  btn.classList.toggle('open');
+  document.body.style.overflow=menu.classList.contains('open')?'hidden':'';
+}
+function closeMenu(){
+  document.getElementById('mobileMenu').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+window.addEventListener('scroll',()=>{
+  document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>20);
+});
+
+async function handleSubmit(e){
+  e.preventDefault();
+  const btn=document.getElementById('submitBtn');
+  const success=document.getElementById('formSuccess');
+  const error=document.getElementById('formError');
+
+  const name=document.getElementById('f-name').value.trim();
+  const email=document.getElementById('f-email').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  const projectType=document.getElementById('f-type').value;
+  const message=document.getElementById('f-msg').value.trim();
+
+  if(!name||!email||!phone||!projectType||!message){
+    error.textContent='Please fill in all fields.';
+    error.style.display='block';
+    success.style.display='none';
+    return;
+  }
+
+  btn.textContent='Sending...';
+  btn.disabled=true;
+  success.style.display='none';
+  error.style.display='none';
+
+  try{
+    const res=await fetch('/api/contact',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,email,phone,projectType,message}),
+    });
+    const data=await res.json();
+    if(res.ok&&data.success){
+      success.style.display='block';
+      document.getElementById('contactForm').reset();
+    }else{
+      error.textContent=data.error||'Something went wrong. Please try again.';
+      error.style.display='block';
+    }
+  }catch(err){
+    error.textContent='Network error. Please check your connection.';
+    error.style.display='block';
+  }finally{
+    btn.textContent='Send Message →';
+    btn.disabled=false;
+  }
+}
+</script>
+</body>
+</html>
