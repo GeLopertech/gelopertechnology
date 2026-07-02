@@ -135,13 +135,13 @@ async function logLeadToNotion(lead) {
     body: JSON.stringify({
       parent: { database_id: process.env.NOTION_DATABASE_ID },
       properties: {
-        Name:           { title:        [{ text: { content: lead.name } }] },
-        Email:          { email:        lead.email },
-        Phone:          { phone_number: lead.phone },
-        "Project Type": { rich_text:    [{ text: { content: lead.projectType } }] },
-        Message:        { rich_text:    [{ text: { content: lead.message } }] },
-        Status:         { rich_text:    [{ text: { content: "New Lead" } }] },
-        "Submitted At": { rich_text:    [{ text: { content: now } }] },
+        Name: { title: [{ text: { content: lead.name } }] },
+        Email: { email: lead.email },
+        Phone: { phone_number: lead.phone },
+        "Project Type": { rich_text: [{ text: { content: lead.projectType } }] },
+        Message: { rich_text: [{ text: { content: lead.message } }] },
+        Status: { rich_text: [{ text: { content: "New Lead" } }] },
+        "Submitted At": { rich_text: [{ text: { content: now } }] },
       },
     }),
   });
@@ -210,10 +210,10 @@ module.exports = async function handler(req, res) {
 
   // ── Block disposable domains ──
   const blockedDomains = [
-    'example.com','test.com','fake.com','tempmail.com','mailinator.com',
-    'guerrillamail.com','yopmail.com','throwaway.email','sharklasers.com',
-    'trashmail.com','dispostable.com','maildrop.cc','10minutemail.com',
-    'temp-mail.org','getnada.com','spamgourmet.com',
+    'example.com', 'test.com', 'fake.com', 'tempmail.com', 'mailinator.com',
+    'guerrillamail.com', 'yopmail.com', 'throwaway.email', 'sharklasers.com',
+    'trashmail.com', 'dispostable.com', 'maildrop.cc', '10minutemail.com',
+    'temp-mail.org', 'getnada.com', 'spamgourmet.com',
   ];
   const emailDomain = email.split('@')[1]?.toLowerCase();
   if (blockedDomains.includes(emailDomain)) {
@@ -232,9 +232,20 @@ module.exports = async function handler(req, res) {
     // Admin email must succeed
     await sendAdminEmail(lead);
 
-    // Client auto-reply + Notion — non-blocking
-    sendClientEmail(lead).catch(err => console.error("Client email failed:", err.message));
-    logLeadToNotion(lead).catch(err => console.error("Notion failed:", err.message));
+    // Run client email + Notion in parallel and AWAIT both
+    // This is critical on Vercel — without await, the function is killed
+    // before these async tasks can complete their network requests
+    const [clientResult, notionResult] = await Promise.allSettled([
+      sendClientEmail(lead),
+      logLeadToNotion(lead),
+    ]);
+
+    if (clientResult.status === "rejected") {
+      console.error("Client email failed:", clientResult.reason.message);
+    }
+    if (notionResult.status === "rejected") {
+      console.error("Notion failed:", notionResult.reason.message);
+    }
 
     return res.status(200).json({ success: true });
   } catch (err) {
