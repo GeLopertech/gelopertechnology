@@ -27,7 +27,7 @@ function sanitize(str) {
     .trim();
 }
 
-async function sendLeadEmails(lead) {
+async function buildEmails(lead) {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
@@ -80,20 +80,26 @@ async function sendLeadEmails(lead) {
     </div>
   </div>`;
 
-  // 1. Send auto-reply to client FIRST — if this fails, whole submission fails
-  await transporter.sendMail({
-    from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
-    to: lead.email,
-    subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
-    html: clientHtml,
-  });
+  return { transporter, adminHtml, clientHtml };
+}
 
-  // 2. Send admin notification
+async function sendAdminEmail(lead) {
+  const { transporter, adminHtml } = await buildEmails(lead);
   await transporter.sendMail({
     from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
     to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
     subject: `🔔 New Lead: ${lead.name} — ${lead.projectType}`,
     html: adminHtml,
+  });
+}
+
+async function sendClientEmail(lead) {
+  const { transporter, clientHtml } = await buildEmails(lead);
+  await transporter.sendMail({
+    from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
+    to: lead.email,
+    subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
+    html: clientHtml,
   });
 }
 
@@ -188,27 +194,22 @@ export default async function handler(req, res) {
   };
 
   try {
-    // Send emails first — if client email fails, submission is rejected
-    await sendLeadEmails(lead);
+    // 1. Send admin notification — this must succeed
+    await sendAdminEmail(lead);
 
-    // Log to Notion in background (non-blocking)
+    // 2. Send auto-reply to client — non-blocking, don't fail submission if this fails
+    sendClientEmail(lead).catch(err => {
+      console.error("Client auto-reply failed (non-blocking):", err.message);
+    });
+
+    // 3. Log to Notion in background — non-blocking
     logLeadToNotion(lead).catch(err => {
-      console.error("Notion failed:", err.message);
+      console.error("Notion failed (non-blocking):", err.message);
     });
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Email error:", err.message);
-    // If SMTP error mentions invalid address or domain → tell user
-    if (
-      err.message.includes("ENOTFOUND") ||
-      err.message.includes("550") ||
-      err.message.includes("554") ||
-      err.message.includes("invalid") ||
-      err.message.includes("does not exist")
-    ) {
-      return res.status(400).json({ error: "Please enter a valid email address that can receive emails." });
-    }
+    console.error("Admin email error:", err.message);
     return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 }
