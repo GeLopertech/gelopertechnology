@@ -302,7 +302,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
   .work-cta{margin-top:1.5rem}
 }
 </style>
-<script src="https://www.google.com/recaptcha/api.js?render=RECAPTCHA_SITE_KEY"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6LdRvUAtAAAAABC9yeDo7Szsh7j2P8JZrPgkOVBf"></script>
 </head>
 <body>
 
@@ -310,12 +310,12 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 <nav id="navbar">
   <a class="logo" href="#"><span>Ge</span>Loper<em>Technology</em></a>
   <ul class="nav-links">
-    <li><a onclick="scrollToSection('about')">About</a></li>
-    <li><a onclick="scrollToSection('services')">Services</a></li>
-    <li><a onclick="scrollToSection('process')">Process</a></li>
-    <li><a onclick="scrollToSection('work')">Work</a></li>
-    <li><a onclick="scrollToSection('pricing')">Pricing</a></li>
-    <li><a onclick="scrollToSection('contact')">Contact</a></li>
+    <li><a href="#about" onclick="event.preventDefault();scrollToSection('about')">About</a></li>
+    <li><a href="#services" onclick="event.preventDefault();scrollToSection('services')">Services</a></li>
+    <li><a href="#process" onclick="event.preventDefault();scrollToSection('process')">Process</a></li>
+    <li><a href="#work" onclick="event.preventDefault();scrollToSection('work')">Work</a></li>
+    <li><a href="#pricing" onclick="event.preventDefault();scrollToSection('pricing')">Pricing</a></li>
+    <li><a href="#contact" onclick="event.preventDefault();scrollToSection('contact')">Contact</a></li>
   </ul>
   <button class="btn-nav" onclick="scrollToSection('contact')">Get a Quote</button>
   <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()" aria-label="Menu">
@@ -537,7 +537,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
         <div class="work-color-block" style="background:#EEF2FF"><span class="work-tag" style="background:#4F46E5">Billing system</span></div>
         <div class="work-content">
           <div class="work-title">Super market billing system</div>
-          <div class="work-desc">A billing system used in super market and to track their.</div>
+          <div class="work-desc">A billing system used in supermarkets to track their sales.</div>
           <div class="work-stack"><span class="stack-tag">React</span><span class="stack-tag">Spring Boot</span><span class="stack-tag">MySQL</span><span class="stack-tag">JWT</span></div>
         </div>
       </div>
@@ -560,7 +560,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
     <div class="pricing-grid">
       <div class="plan">
         <div class="plan-name">Starter</div>
-        <div class="plan-price" style="font-family: sans-serif;" >₹2,499<span> onwards</span></div>
+        <div class="plan-price" >₹2,499<span> onwards</span></div>
         <div class="plan-note">Best for landing pages & small businesses</div>
         <ul class="plan-features">
           <li><span class="check">✓</span>Static website (up to 5 pages)</li>
@@ -573,7 +573,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
       <div class="plan featured">
         <div class="plan-badge">Most Popular</div>
         <div class="plan-name">Business</div>
-        <div class="plan-price" style="font-family: sans-serif;">₹7,999<span> onwards</span></div>
+        <div class="plan-price">₹7,999<span> onwards</span></div>
         <div class="plan-note">For growing businesses needing a full web app</div>
         <ul class="plan-features">
           <li><span class="check">✓</span>Dynamic website or web app</li>
@@ -586,7 +586,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
       </div>
       <div class="plan">
         <div class="plan-name">Enterprise</div>
-        <div class="plan-price" style="font-family: sans-serif;">Custom</div>
+        <div class="plan-price">Custom</div>
         <div class="plan-note">Full-scale applications with custom needs</div>
         <ul class="plan-features">
           <li><span class="check">✓</span>Full web or mobile application</li>
@@ -597,7 +597,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
         <button class="plan-btn outline" onclick="scrollToSection('contact')">Get Started →</button>
       </div>
     </div>
-    <p class="pricing-note">Not sure which plan fits? <a onclick="scrollToSection('contact')">Get a free quote →</a></p>
+    <p class="pricing-note">Not sure which plan fits? <a href="#contact" onclick="event.preventDefault();scrollToSection('contact')">Get a free quote →</a></p>
   </div>
 </section>
 
@@ -710,11 +710,11 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
       <div class="footer-cols">
         <div class="footer-col">
           <div class="footer-col-title">Navigation</div>
-          <a onclick="scrollToSection('services')">Services</a>
-          <a onclick="scrollToSection('process')">Process</a>
-          <a onclick="scrollToSection('work')">Work</a>
-          <a onclick="scrollToSection('pricing')">Pricing</a>
-          <a onclick="scrollToSection('contact')">Contact</a>
+          <a href="#services" onclick="event.preventDefault();scrollToSection('services')">Services</a>
+          <a href="#process" onclick="event.preventDefault();scrollToSection('process')">Process</a>
+          <a href="#work" onclick="event.preventDefault();scrollToSection('work')">Work</a>
+          <a href="#pricing" onclick="event.preventDefault();scrollToSection('pricing')">Pricing</a>
+          <a href="#contact" onclick="event.preventDefault();scrollToSection('contact')">Contact</a>
         </div>
         <div class="footer-col">
           <div class="footer-col-title">Services</div>
@@ -779,7 +779,7 @@ async function handleSubmit(e){
 
   try{
     // Get reCAPTCHA v3 token (invisible to user)
-    const recaptchaToken = await grecaptcha.execute('RECAPTCHA_SITE_KEY', {action:'contact'});
+    const recaptchaToken = await grecaptcha.execute('6LdRvUAtAAAAABC9yeDo7Szsh7j2P8JZrPgkOVBf', {action:'contact'});
 
     const res=await fetch('/api/contact',{
       method:'POST',

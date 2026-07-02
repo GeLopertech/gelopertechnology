@@ -1,9 +1,9 @@
-import nodemailer from "nodemailer";
+const nodemailer = require("nodemailer");
 
-// ── Rate limiter: max 2 per 5 minutes per IP ──
+// ── Rate limiter (best-effort, ephemeral) ──
 const rateLimit = new Map();
 const RATE_LIMIT = 2;
-const RATE_WINDOW = 5 * 60 * 1000; // 5 minutes
+const RATE_WINDOW = 5 * 60 * 1000;
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -27,8 +27,21 @@ function sanitize(str) {
     .trim();
 }
 
-async function buildEmails(lead) {
-  const transporter = nodemailer.createTransport({
+// ── Verify reCAPTCHA v3 ──
+async function verifyRecaptcha(token) {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secret) return true; // skip if not configured
+  const res = await fetch(
+    `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
+    { method: "POST" }
+  );
+  const data = await res.json();
+  return data.success && data.score >= 0.5;
+}
+
+// ── Build email transporter ──
+function getTransporter() {
+  return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
@@ -37,7 +50,10 @@ async function buildEmails(lead) {
       pass: process.env.GMAIL_PASS,
     },
   });
+}
 
+// ── Email templates ──
+function buildEmails(lead) {
   const now = new Date().toLocaleString("en-IN", {
     timeZone: "Asia/Kolkata",
     dateStyle: "short",
@@ -80,12 +96,12 @@ async function buildEmails(lead) {
     </div>
   </div>`;
 
-  return { transporter, adminHtml, clientHtml };
+  return { adminHtml, clientHtml };
 }
 
 async function sendAdminEmail(lead) {
-  const { transporter, adminHtml } = await buildEmails(lead);
-  await transporter.sendMail({
+  const { adminHtml } = buildEmails(lead);
+  await getTransporter().sendMail({
     from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
     to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
     subject: `🔔 New Lead: ${lead.name} — ${lead.projectType}`,
@@ -94,8 +110,8 @@ async function sendAdminEmail(lead) {
 }
 
 async function sendClientEmail(lead) {
-  const { transporter, clientHtml } = await buildEmails(lead);
-  await transporter.sendMail({
+  const { clientHtml } = buildEmails(lead);
+  await getTransporter().sendMail({
     from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
     to: lead.email,
     subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
@@ -109,7 +125,6 @@ async function logLeadToNotion(lead) {
     dateStyle: "short",
     timeStyle: "short",
   });
-
   const response = await fetch("https://api.notion.com/v1/pages", {
     method: "POST",
     headers: {
@@ -130,77 +145,75 @@ async function logLeadToNotion(lead) {
       },
     }),
   });
-
   if (!response.ok) {
     const err = await response.json();
     throw new Error(`Notion error: ${JSON.stringify(err)}`);
   }
 }
 
-// ── Verify reCAPTCHA v3 token ──
-async function verifyRecaptcha(token) {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  const response = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
-    { method: "POST" }
-  );
-  const data = await response.json();
-  // score: 1.0 = human, 0.0 = bot — reject below 0.5
-  return data.success && data.score >= 0.5;
-}
+// ── Allowed origins ──
+const ALLOWED_ORIGINS = [
+  "https://gelopertechnology.vercel.app",
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+];
 
-export default async function handler(req, res) {
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "https://gelopertechnology.vercel.app");
+module.exports = async function handler(req, res) {
+  // ── CORS ──
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // Rate limiting
+  // ── Rate limiting ──
   const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "unknown";
   if (isRateLimited(ip)) {
     return res.status(429).json({ error: "Too many requests. Please wait 5 minutes." });
   }
 
-  const { name, email, phone, projectType, message, honeypot } = req.body;
+  // ── Safe destructure (fix crash on empty body) ──
+  const {
+    name, email, phone, projectType, message,
+    honeypot, recaptchaToken
+  } = req.body || {};
 
-  // ── Honeypot check — bots fill hidden fields, humans don't ──
+  // ── Honeypot check ──
   if (honeypot && honeypot.trim() !== "") {
-    // Silently reject bot — return 200 so bot thinks it succeeded
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true }); // silent reject
   }
 
-  // ── reCAPTCHA v3 verification ──
-  const { recaptchaToken } = req.body;
+  // ── reCAPTCHA verification ──
   if (!recaptchaToken) {
-    return res.status(400).json({ error: "reCAPTCHA verification failed. Please try again." });
+    return res.status(400).json({ error: "reCAPTCHA verification missing. Please try again." });
   }
   const isHuman = await verifyRecaptcha(recaptchaToken);
   if (!isHuman) {
     return res.status(400).json({ error: "Bot detected. Please try again." });
   }
 
-  // Validate required fields
+  // ── Validate required fields ──
   if (!name || !email || !phone || !projectType || !message)
     return res.status(400).json({ error: "All fields are required." });
 
-  // Email format check
+  // ── Email format ──
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email))
     return res.status(400).json({ error: "Invalid email address." });
 
-  // Length check
+  // ── Length check ──
   if (name.length > 100 || message.length > 2000 || phone.length > 20)
     return res.status(400).json({ error: "Input too long." });
 
-  // Block known disposable domains
+  // ── Block disposable domains ──
   const blockedDomains = [
-    'example.com', 'test.com', 'fake.com', 'tempmail.com',
-    'mailinator.com', 'guerrillamail.com', 'yopmail.com',
-    'throwaway.email', 'sharklasers.com', 'trashmail.com',
-    'dispostable.com', 'maildrop.cc', '10minutemail.com',
-    'temp-mail.org', 'getnada.com', 'spamgourmet.com',
+    'example.com','test.com','fake.com','tempmail.com','mailinator.com',
+    'guerrillamail.com','yopmail.com','throwaway.email','sharklasers.com',
+    'trashmail.com','dispostable.com','maildrop.cc','10minutemail.com',
+    'temp-mail.org','getnada.com','spamgourmet.com',
   ];
   const emailDomain = email.split('@')[1]?.toLowerCase();
   if (blockedDomains.includes(emailDomain)) {
@@ -216,30 +229,20 @@ export default async function handler(req, res) {
   };
 
   try {
-    // 1. Send admin notification — this must succeed
+    // Admin email must succeed
     await sendAdminEmail(lead);
 
-    // 2. Send auto-reply to client — non-blocking, don't fail submission if this fails
-    sendClientEmail(lead).catch(err => {
-      console.error("Client auto-reply failed (non-blocking):", err.message);
-    });
-
-    // 3. Log to Notion in background — non-blocking
-    logLeadToNotion(lead).catch(err => {
-      console.error("Notion failed (non-blocking):", err.message);
-    });
+    // Client auto-reply + Notion — non-blocking
+    sendClientEmail(lead).catch(err => console.error("Client email failed:", err.message));
+    logLeadToNotion(lead).catch(err => console.error("Notion failed:", err.message));
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Admin email error FULL:", JSON.stringify({
-      message: err.message,
-      code: err.code,
-      response: err.response,
-      responseCode: err.responseCode,
-    }));
-    return res.status(500).json({ 
-      error: "Something went wrong. Please try again.",
-      debug: err.message  // temporary — remove after fixing
-    });
+    console.error("Admin email error:", err.message, "code:", err.code, "response:", err.response);
+    // Differentiate system errors from recipient errors
+    if (err.responseCode >= 500 && err.responseCode < 510) {
+      return res.status(503).json({ error: "Mail server temporarily unavailable. Please try WhatsApp." });
+    }
+    return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
-}
+};
