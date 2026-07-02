@@ -137,6 +137,18 @@ async function logLeadToNotion(lead) {
   }
 }
 
+// ── Verify reCAPTCHA v3 token ──
+async function verifyRecaptcha(token) {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  const response = await fetch(
+    `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
+    { method: "POST" }
+  );
+  const data = await response.json();
+  // score: 1.0 = human, 0.0 = bot — reject below 0.5
+  return data.success && data.score >= 0.5;
+}
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "https://gelopertechnology.vercel.app");
@@ -157,6 +169,16 @@ export default async function handler(req, res) {
   if (honeypot && honeypot.trim() !== "") {
     // Silently reject bot — return 200 so bot thinks it succeeded
     return res.status(200).json({ success: true });
+  }
+
+  // ── reCAPTCHA v3 verification ──
+  const { recaptchaToken } = req.body;
+  if (!recaptchaToken) {
+    return res.status(400).json({ error: "reCAPTCHA verification failed. Please try again." });
+  }
+  const isHuman = await verifyRecaptcha(recaptchaToken);
+  if (!isHuman) {
+    return res.status(400).json({ error: "Bot detected. Please try again." });
   }
 
   // Validate required fields
@@ -209,7 +231,15 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Admin email error:", err.message);
-    return res.status(500).json({ error: "Something went wrong. Please try again." });
+    console.error("Admin email error FULL:", JSON.stringify({
+      message: err.message,
+      code: err.code,
+      response: err.response,
+      responseCode: err.responseCode,
+    }));
+    return res.status(500).json({ 
+      error: "Something went wrong. Please try again.",
+      debug: err.message  // temporary — remove after fixing
+    });
   }
 }
