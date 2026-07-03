@@ -1,16 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/x-icon" href="/favicon.ico"/>
 <meta charset="UTF-8"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="GeLoper Technology offers top-tier web development, app development, and UI/UX design services for businesses." />
 
-<title>GeLoper Technology — Dream It, We Build It. Instantly.</title>
+<!-- ── Primary SEO ── -->
+<title>GeLoper Technology — Web & App Development Agency in Chennai</title>
+<meta name="description" content="GeLoper Technology is a Chennai-based web and app development agency. We build fast, affordable websites, mobile apps, e-commerce platforms and web applications for businesses across India."/>
+<meta name="keywords" content="web development Chennai, app development India, website design Chennai, React developer Chennai, Flutter app Chennai, e-commerce development India, affordable web development, GeLoper Technology"/>
+<meta name="author" content="GeLoper Technology"/>
+<meta name="robots" content="index, follow"/>
+<meta name="theme-color" content="#1D9E75"/>
+<link rel="canonical" href="https://gelopertechnology.vercel.app"/>
+
+<!-- ── Open Graph (WhatsApp, Facebook, LinkedIn) ── -->
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://gelopertechnology.vercel.app"/>
+<meta property="og:title" content="GeLoper Technology — Web & App Development Agency in Chennai"/>
+<meta property="og:description" content="We build fast, affordable websites, mobile apps, and web applications for businesses across India. Dream It, We Build It. Instantly."/>
+<meta property="og:image" content="https://gelopertechnology.vercel.app/og-image.png"/>
+<meta property="og:site_name" content="GeLoper Technology"/>
+<meta property="og:locale" content="en_IN"/>
+
+<!-- ── Twitter / X Card ── -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:url" content="https://gelopertechnology.vercel.app"/>
+<meta name="twitter:title" content="GeLoper Technology — Web & App Development Agency in Chennai"/>
+<meta name="twitter:description" content="We build fast, affordable websites, mobile apps, and web applications for businesses across India."/>
+<meta name="twitter:image" content="https://gelopertechnology.vercel.app/og-image.png"/>
+
+<!-- ── Schema.org JSON-LD ── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "GeLoper Technology",
+  "url": "https://gelopertechnology.vercel.app",
+  "logo": "https://gelopertechnology.vercel.app/favicon.ico",
+  "description": "GeLoper Technology is a Chennai-based web and app development agency building fast, clean, and affordable digital products for Indian businesses.",
+  "email": "sciencedotbusiness@gmail.com",
+  "telephone": "+91-97911-58504",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Chennai",
+    "addressRegion": "Tamil Nadu",
+    "addressCountry": "IN"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 13.0827,
+    "longitude": 80.2707
+  },
+  "areaServed": "India",
+  "priceRange": "₹₹",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Development Services",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Web Development" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Mobile App Development" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "UI/UX Design" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "E-Commerce Development" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "API Development" } }
+    ]
+  },
+  "sameAs": ["https://wa.me/919791158504"]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="dns-prefetch" href="https://www.google.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -334,8 +396,9 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
   <button class="btn-nav" onclick="closeMenu();scrollToSection('contact')">Get a Quote →</button>
 </div>
 
+<main id="main-content">
 <!-- HERO -->
-<section id="hero">
+<section id="hero" aria-label="Hero">
   <div class="hero-grid"></div>
   <div class="hero-glow"></div>
   <div class="hero-inner">
@@ -357,7 +420,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 </section>
 
 <!-- ABOUT -->
-<section id="about" class="about-section">
+<section id="about" aria-label="About Us" class="about-section">
   <div class="container">
     <div class="section-head">
       <div class="section-tag">Who we are</div>
@@ -378,7 +441,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 </section>
 
 <!-- SERVICES -->
-<section id="services" class="bg-alt">
+<section id="services" aria-label="Services" class="bg-alt">
   <div class="container">
     <div class="section-head">
       <div class="section-tag">What we do</div>
@@ -450,7 +513,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 </section>
 
 <!-- PROCESS -->
-<section id="process" class="bg-alt">
+<section id="process" aria-label="Our Process" class="bg-alt">
   <div class="container">
     <div class="process-layout">
       <div>
@@ -474,7 +537,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 </section>
 
 <!-- WORK -->
-<section id="work">
+<section id="work" aria-label="Portfolio">
   <div class="container">
     <div class="section-head">
       <div class="section-tag">Portfolio</div>
@@ -550,7 +613,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 </section>
 
 <!-- PRICING -->
-<section id="pricing" class="bg-alt">
+<section id="pricing" aria-label="Pricing" class="bg-alt">
   <div class="container">
     <div class="section-head center">
       <div class="section-tag">Pricing</div>
@@ -633,7 +696,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
 </div>
 
 <!-- CONTACT -->
-<section id="contact">
+<section id="contact" aria-label="Contact Us">
   <div class="container">
     <div class="contact-layout">
       <div>
@@ -698,6 +761,8 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- FOOTER -->
 <footer>
