@@ -109,15 +109,15 @@ async function sendAdminEmail(lead) {
   });
 }
 
-async function sendClientEmail(lead) {
-  const { clientHtml } = buildEmails(lead);
-  await getTransporter().sendMail({
-    from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
-    to: lead.email,
-    subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
-    html: clientHtml,
-  });
-}
+//async function sendClientEmail(lead) {
+//const { clientHtml } = buildEmails(lead);
+//await getTransporter().sendMail({
+//from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
+//to: lead.email,
+//subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
+//html: clientHtml,
+//});
+//}
 
 async function logLeadToNotion(lead) {
   const now = new Date().toLocaleString("en-IN", {
