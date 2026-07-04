@@ -13,6 +13,7 @@
 <meta name="keywords" content="web development Chennai, app development India, website design Chennai, React developer Chennai, Flutter app Chennai, e-commerce development India, affordable web development, GeLoper Technology"/>
 <meta name="author" content="GeLoper Technology"/>
 <meta name="robots" content="index, follow"/>
+<meta name="x-gs" content="gelopertechnologyvarun@@2008"/>
 <meta name="theme-color" content="#1D9E75"/>
 <link rel="canonical" href="https://gelopertechnology.vercel.app"/>
 
@@ -73,6 +74,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="dns-prefetch" href="https://www.google.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -363,8 +365,22 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
   .reasons-grid{grid-template-columns:1fr}
   .work-cta{margin-top:1.5rem}
 }
+
+/* ── Math CAPTCHA ── */
+.math-captcha{background:var(--brand-light);border:1.5px solid rgba(29,158,117,0.25);border-radius:9px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.math-captcha label{font-size:12.5px;font-weight:600;color:#555;white-space:nowrap}
+.math-question{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--brand-dark);background:#fff;padding:6px 14px;border-radius:7px;border:1px solid rgba(29,158,117,0.2);white-space:nowrap}
+.math-input{width:80px;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:'Manrope',sans-serif;color:var(--text);outline:none;transition:border-color 0.2s}
+.math-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(29,158,117,0.1)}
+
+/* ── Math CAPTCHA ── */
+.math-captcha{background:var(--brand-light);border:1.5px solid rgba(29,158,117,0.25);border-radius:9px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.math-captcha label{font-size:12.5px;font-weight:600;color:#555;white-space:nowrap}
+.math-question{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--brand-dark);background:#fff;padding:6px 14px;border-radius:7px;border:1px solid rgba(29,158,117,0.2);white-space:nowrap}
+.math-input{width:80px;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:'Manrope',sans-serif;color:var(--text);outline:none;transition:border-color 0.2s}
+.math-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(29,158,117,0.1)}
 </style>
-<script src="https://www.google.com/recaptcha/api.js?render=6LdRvUAtAAAAABC9yeDo7Szsh7j2P8JZrPgkOVBf"></script>
+<script defer src="https://www.google.com/recaptcha/api.js?render=6LdRvUAtAAAAABC9yeDo7Szsh7j2P8JZrPgkOVBf" onload="window.RECAPTCHA_SITE_KEY=new URLSearchParams(this.src.split('?')[1]).get('render')"></script>
 </head>
 <body>
 
@@ -754,6 +770,15 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
         <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
           <input type="text" id="f-honeypot" name="honeypot" tabindex="-1" autocomplete="off"/>
         </div>
+        <!-- Math CAPTCHA -->
+        <div class="math-captcha">
+          <label>Prove you're human:</label>
+          <span class="math-question" id="mathQuestion">...</span>
+            <input type="number" class="math-input" id="f-math" placeholder="?" required autocomplete="off"/>
+            <input type="hidden" id="f-math-a" name="mathA" />
+            <input type="hidden" id="f-math-b" name="mathB" />
+            <input type="hidden" id="f-math-op" name="mathOp" />
+        </div>
         <button type="submit" class="form-submit" id="submitBtn">Send Message →</button>
         <div class="form-success" id="formSuccess">✅ Message sent! We'll get back to you within 24 hours.</div>
         <div class="form-error" id="formError"></div>
@@ -818,6 +843,35 @@ window.addEventListener('scroll',()=>{
   document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>20);
 });
 
+// ── Math CAPTCHA generator ──
+let mathExpected = 0;
+function generateMath() {
+  const ops = ['+', '-', '×'];
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  let a, b, ans;
+  if (op === '+') { a = Math.floor(Math.random()*20)+1; b = Math.floor(Math.random()*20)+1; ans = a+b; }
+  else if (op === '-') { a = Math.floor(Math.random()*20)+10; b = Math.floor(Math.random()*10)+1; ans = a-b; }
+  else { a = Math.floor(Math.random()*9)+2; b = Math.floor(Math.random()*9)+2; ans = a*b; }
+  mathExpected = ans;
+  document.getElementById('mathQuestion').textContent = `${a} ${op} ${b} = ?`;
+  document.getElementById('f-math').value = '';
+  // store operands/operator in hidden inputs so server can validate
+  const elA = document.getElementById('f-math-a');
+  const elB = document.getElementById('f-math-b');
+  const elOp = document.getElementById('f-math-op');
+  if (elA) elA.value = a;
+  if (elB) elB.value = b;
+  if (elOp) elOp.value = op;
+}
+
+// ── Form load timestamp ──
+const formLoadTime = Date.now();
+
+// ── Initialize on page load ──
+window.addEventListener('load', function() {
+  generateMath();
+});
+
 async function handleSubmit(e){
   e.preventDefault();
   const btn=document.getElementById('submitBtn');
@@ -829,11 +883,19 @@ async function handleSubmit(e){
   const phone=document.getElementById('f-phone').value.trim();
   const projectType=document.getElementById('f-type').value;
   const message=document.getElementById('f-msg').value.trim();
+  const honeypot=document.getElementById('f-honeypot')?.value||'';
+  const mathAnswer=document.getElementById('f-math').value.trim();
 
   if(!name||!email||!phone||!projectType||!message){
     error.textContent='Please fill in all fields.';
     error.style.display='block';
     success.style.display='none';
+    return;
+  }
+
+  if(!mathAnswer){
+    error.textContent='Please solve the math question.';
+    error.style.display='block';
     return;
   }
 
@@ -843,21 +905,35 @@ async function handleSubmit(e){
   error.style.display='none';
 
   try{
-    // Get reCAPTCHA v3 token (invisible to user)
-    const recaptchaToken = await grecaptcha.execute('6LdRvUAtAAAAABC9yeDo7Szsh7j2P8JZrPgkOVBf', {action:'contact'});
+    // Get reCAPTCHA token
+    const recaptchaToken = await grecaptcha.execute(window.RECAPTCHA_SITE_KEY, {action:'contact'});
 
     const res=await fetch('/api/contact',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,email,phone,projectType,message,honeypot:document.getElementById('f-honeypot')?.value||'',recaptchaToken}),
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-secret': window.__GS__ || ''
+      },
+      body:JSON.stringify({
+          name,email,phone,projectType,message,
+          honeypot,
+          recaptchaToken,
+          formTimestamp: formLoadTime,
+          mathAnswer: parseInt(mathAnswer),
+          mathA: document.getElementById('f-math-a')?.value,
+          mathB: document.getElementById('f-math-b')?.value,
+          mathOp: document.getElementById('f-math-op')?.value,
+        }),
     });
     const data=await res.json();
     if(res.ok&&data.success){
       success.style.display='block';
       document.getElementById('contactForm').reset();
+      generateMath(); // regenerate math question after success
     }else{
       error.textContent=data.error||'Something went wrong. Please try again.';
       error.style.display='block';
+      generateMath(); // regenerate on failure too
     }
   }catch(err){
     error.textContent='Network error. Please check your connection.';
@@ -867,6 +943,11 @@ async function handleSubmit(e){
     btn.disabled=false;
   }
 }
+</script>
+<script>
+// API secret loaded from meta tag (set this in your HTML deploy or use env injection)
+const _m = document.querySelector('meta[name="x-gs"]');
+window.__GS__ = _m ? _m.getAttribute('content') : '';
 </script>
 </body>
 </html>

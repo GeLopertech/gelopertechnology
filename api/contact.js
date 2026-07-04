@@ -1,9 +1,9 @@
 const nodemailer = require("nodemailer");
 
-// ── Rate limiter (best-effort, ephemeral) ──
+// ── In-memory rate limiter (per IP, 2 per 10 mins) ──
 const rateLimit = new Map();
 const RATE_LIMIT = 2;
-const RATE_WINDOW = 5 * 60 * 1000;
+const RATE_WINDOW = 10 * 60 * 1000;
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -17,7 +17,7 @@ function isRateLimited(ip) {
   return false;
 }
 
-// ── Sanitize input ──
+// ── Sanitize ──
 function sanitize(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -29,17 +29,33 @@ function sanitize(str) {
 
 // ── Verify reCAPTCHA v3 ──
 async function verifyRecaptcha(token) {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret) return true; // skip if not configured
-  const res = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
-    { method: "POST" }
-  );
-  const data = await res.json();
-  return data.success && data.score >= 0.5;
+  try {
+    const secret = process.env.RECAPTCHA_SECRET_KEY;
+    if (!secret) return true;
+    const res = await fetch(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
+      { method: "POST" }
+    );
+    const data = await res.json();
+    console.log("reCAPTCHA score:", data.score, "success:", data.success);
+    return data.success && data.score >= 0.5;
+  } catch (e) {
+    console.error("reCAPTCHA verify error:", e.message);
+    return false;
+  }
 }
 
-// ── Build email transporter ──
+// ── Verify time-based token (prevents replay attacks) ──
+function verifyTimestamp(ts) {
+  if (!ts) return false;
+  const submitted = parseInt(ts);
+  const now = Date.now();
+  const diff = now - submitted;
+  // Must be submitted between 3 seconds and 10 minutes after page load
+  return diff > 3000 && diff < 10 * 60 * 1000;
+}
+
+// ── Email transporter ──
 function getTransporter() {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -96,29 +112,10 @@ function buildEmails(lead) {
     </div>
   </div>`;
 
-  return { adminHtml, clientHtml };
+  return { adminHtml, clientHtml, now };
 }
 
-async function sendAdminEmail(lead) {
-  const { adminHtml } = buildEmails(lead);
-  await getTransporter().sendMail({
-    from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
-    to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
-    subject: `🔔 New Lead: ${lead.name} — ${lead.projectType}`,
-    html: adminHtml,
-  });
-}
-
-//async function sendClientEmail(lead) {
-//const { clientHtml } = buildEmails(lead);
-//await getTransporter().sendMail({
-//from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
-//to: lead.email,
-//subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
-//html: clientHtml,
-//});
-//}
-
+// ── Notion logging ──
 async function logLeadToNotion(lead) {
   const now = new Date().toLocaleString("en-IN", {
     timeZone: "Asia/Kolkata",
@@ -135,19 +132,19 @@ async function logLeadToNotion(lead) {
     body: JSON.stringify({
       parent: { database_id: process.env.NOTION_DATABASE_ID },
       properties: {
-        Name: { title: [{ text: { content: lead.name } }] },
-        Email: { email: lead.email },
-        Phone: { phone_number: lead.phone },
-        "Project Type": { rich_text: [{ text: { content: lead.projectType } }] },
-        Message: { rich_text: [{ text: { content: lead.message } }] },
-        Status: { rich_text: [{ text: { content: "New Lead" } }] },
-        "Submitted At": { rich_text: [{ text: { content: now } }] },
+        Name:           { title:        [{ text: { content: lead.name } }] },
+        Email:          { email:        lead.email },
+        Phone:          { phone_number: lead.phone },
+        "Project Type": { rich_text:    [{ text: { content: lead.projectType } }] },
+        Message:        { rich_text:    [{ text: { content: lead.message } }] },
+        Status:         { rich_text:    [{ text: { content: "New Lead" } }] },
+        "Submitted At": { rich_text:    [{ text: { content: now } }] },
       },
     }),
   });
   if (!response.ok) {
     const err = await response.json();
-    throw new Error(`Notion error: ${JSON.stringify(err)}`);
+    throw new Error(`Notion: ${JSON.stringify(err)}`);
   }
 }
 
@@ -156,7 +153,24 @@ const ALLOWED_ORIGINS = [
   "https://gelopertechnology.vercel.app",
   "http://localhost:3000",
   "http://127.0.0.1:5500",
+  "http://localhost:5500",
 ];
+
+// ── Blocked disposable domains ──
+const BLOCKED_DOMAINS = new Set([
+  'example.com','test.com','fake.com','tempmail.com','mailinator.com',
+  'guerrillamail.com','yopmail.com','throwaway.email','sharklasers.com',
+  'trashmail.com','dispostable.com','maildrop.cc','10minutemail.com',
+  'temp-mail.org','getnada.com','spamgourmet.com','grr.la','spam4.me',
+  'boun.cr','spamgourmet.net','trashmail.net','discard.email',
+]);
+
+// ── Trusted domains for client auto-reply ──
+const TRUSTED_DOMAINS = new Set([
+  'gmail.com','yahoo.com','yahoo.in','outlook.com','hotmail.com',
+  'icloud.com','protonmail.com','proton.me','rediffmail.com',
+  'ymail.com','live.com','msn.com','me.com','mac.com',
+]);
 
 module.exports = async function handler(req, res) {
   // ── CORS ──
@@ -165,58 +179,84 @@ module.exports = async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-secret");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // ── Rate limiting ──
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "unknown";
-  if (isRateLimited(ip)) {
-    return res.status(429).json({ error: "Too many requests. Please wait 5 minutes." });
+  // ── API Secret header check ──
+  const apiSecret = req.headers["x-api-secret"];
+  if (!apiSecret || apiSecret !== process.env.API_SECRET) {
+    return res.status(403).json({ error: "Forbidden" });
   }
 
-  // ── Safe destructure (fix crash on empty body) ──
+  // ── Rate limiting ──
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown";
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ error: "Too many requests. Please wait 10 minutes." });
+  }
+
+  // ── Safe destructure ──
   const {
     name, email, phone, projectType, message,
-    honeypot, recaptchaToken
+    honeypot, recaptchaToken, formTimestamp,
+    mathAnswer, mathA, mathB, mathOp
   } = req.body || {};
 
   // ── Honeypot check ──
   if (honeypot && honeypot.trim() !== "") {
+    console.log("Bot caught by honeypot");
     return res.status(200).json({ success: true }); // silent reject
   }
 
-  // ── reCAPTCHA verification ──
+  // ── Timestamp check (bots submit instantly) ──
+  if (!verifyTimestamp(formTimestamp)) {
+    console.log("Bot caught by timestamp:", formTimestamp);
+    return res.status(400).json({ error: "Form submission invalid. Please reload and try again." });
+  }
+
+  // ── Math CAPTCHA check (compute expected server-side from operands)
+  const a = parseInt(mathA);
+  const b = parseInt(mathB);
+  const op = (mathOp || '').toString();
+  if (Number.isNaN(a) || Number.isNaN(b) || !op) {
+    console.log("Invalid math captcha payload");
+    return res.status(400).json({ error: "Incorrect answer. Please reload the page and try again." });
+  }
+  let expected;
+  if (op === '+') expected = a + b;
+  else if (op === '-') expected = a - b;
+  else if (op === '×' || op === 'x' || op === '*') expected = a * b;
+  else expected = null;
+  const submitted = parseInt(mathAnswer);
+  if (expected === null || Number.isNaN(submitted) || submitted !== expected) {
+    console.log("Bot caught by math captcha");
+    return res.status(400).json({ error: "Incorrect answer. Please solve the math question." });
+  }
+
+  // ── reCAPTCHA v3 ──
   if (!recaptchaToken) {
-    return res.status(400).json({ error: "reCAPTCHA verification missing. Please try again." });
+    return res.status(400).json({ error: "reCAPTCHA missing. Please try again." });
   }
   const isHuman = await verifyRecaptcha(recaptchaToken);
   if (!isHuman) {
+    console.log("Bot caught by reCAPTCHA");
     return res.status(400).json({ error: "Bot detected. Please try again." });
   }
 
-  // ── Validate required fields ──
+  // ── Validate fields ──
   if (!name || !email || !phone || !projectType || !message)
     return res.status(400).json({ error: "All fields are required." });
 
-  // ── Email format ──
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email))
     return res.status(400).json({ error: "Invalid email address." });
 
-  // ── Length check ──
   if (name.length > 100 || message.length > 2000 || phone.length > 20)
     return res.status(400).json({ error: "Input too long." });
 
   // ── Block disposable domains ──
-  const blockedDomains = [
-    'example.com', 'test.com', 'fake.com', 'tempmail.com', 'mailinator.com',
-    'guerrillamail.com', 'yopmail.com', 'throwaway.email', 'sharklasers.com',
-    'trashmail.com', 'dispostable.com', 'maildrop.cc', '10minutemail.com',
-    'temp-mail.org', 'getnada.com', 'spamgourmet.com',
-  ];
   const emailDomain = email.split('@')[1]?.toLowerCase();
-  if (blockedDomains.includes(emailDomain)) {
+  if (BLOCKED_DOMAINS.has(emailDomain)) {
     return res.status(400).json({ error: "Please use a valid email address." });
   }
 
@@ -229,30 +269,35 @@ module.exports = async function handler(req, res) {
   };
 
   try {
-    // Admin email must succeed
-    await sendAdminEmail(lead);
+    const transporter = getTransporter();
+    const { adminHtml, clientHtml } = buildEmails(lead);
 
-    // Run client email + Notion in parallel and AWAIT both
-    // This is critical on Vercel — without await, the function is killed
-    // before these async tasks can complete their network requests
-    const [clientResult, notionResult] = await Promise.allSettled([
-      sendClientEmail(lead),
-      logLeadToNotion(lead),
-    ]);
+    // ── Send admin email (must succeed) ──
+    await transporter.sendMail({
+      from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
+      subject: `🔔 New Lead: ${lead.name} — ${lead.projectType}`,
+      html: adminHtml,
+    });
 
-    if (clientResult.status === "rejected") {
-      console.error("Client email failed:", clientResult.reason.message);
+    // ── Send client auto-reply (trusted domains only) ──
+    if (TRUSTED_DOMAINS.has(emailDomain)) {
+      transporter.sendMail({
+        from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
+        to: lead.email,
+        subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
+        html: clientHtml,
+      }).catch(err => console.error("Client email failed:", err.message));
     }
-    if (notionResult.status === "rejected") {
-      console.error("Notion failed:", notionResult.reason.message);
-    }
+
+    // ── Log to Notion (non-blocking) ──
+    logLeadToNotion(lead).catch(err => console.error("Notion failed:", err.message));
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Admin email error:", err.message, "code:", err.code, "response:", err.response);
-    // Differentiate system errors from recipient errors
-    if (err.responseCode >= 500 && err.responseCode < 510) {
-      return res.status(503).json({ error: "Mail server temporarily unavailable. Please try WhatsApp." });
+    console.error("Admin email error:", err.message, err.responseCode);
+    if (err.responseCode === 550 || err.responseCode === 554) {
+      return res.status(503).json({ error: "Mail server issue. Please WhatsApp us directly." });
     }
     return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
