@@ -1,6 +1,6 @@
-const nodemailer = require("nodemailer");
+// api/contact.js — Resend + Notion + Goat-level security
 
-// ── In-memory rate limiter (per IP, 2 per 10 mins) ──
+// ── Rate limiter (2 per 10 mins per IP) ──
 const rateLimit = new Map();
 const RATE_LIMIT = 2;
 const RATE_WINDOW = 10 * 60 * 1000;
@@ -27,7 +27,7 @@ function sanitize(str) {
     .trim();
 }
 
-// ── Verify reCAPTCHA v3 ──
+// ── reCAPTCHA v3 ──
 async function verifyRecaptcha(token) {
   try {
     const secret = process.env.RECAPTCHA_SECRET_KEY;
@@ -37,35 +37,42 @@ async function verifyRecaptcha(token) {
       { method: "POST" }
     );
     const data = await res.json();
-    console.log("reCAPTCHA score:", data.score, "success:", data.success);
+    console.log("reCAPTCHA score:", data.score);
     return data.success && data.score >= 0.5;
   } catch (e) {
-    console.error("reCAPTCHA verify error:", e.message);
+    console.error("reCAPTCHA error:", e.message);
     return false;
   }
 }
 
-// ── Verify time-based token (prevents replay attacks) ──
+// ── Timestamp check (bots submit instantly) ──
 function verifyTimestamp(ts) {
   if (!ts) return false;
-  const submitted = parseInt(ts);
-  const now = Date.now();
-  const diff = now - submitted;
-  // Must be submitted between 3 seconds and 10 minutes after page load
+  const diff = Date.now() - parseInt(ts);
   return diff > 3000 && diff < 10 * 60 * 1000;
 }
 
-// ── Email transporter ──
-function getTransporter() {
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS,
+// ── Send email via Resend ──
+async function sendEmail({ to, subject, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      from: "GeLoper Technology <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    }),
   });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(`Resend error: ${JSON.stringify(err)}`);
+  }
+  return res.json();
 }
 
 // ── Email templates ──
@@ -112,7 +119,7 @@ function buildEmails(lead) {
     </div>
   </div>`;
 
-  return { adminHtml, clientHtml, now };
+  return { adminHtml, clientHtml };
 }
 
 // ── Notion logging ──
@@ -162,7 +169,6 @@ const BLOCKED_DOMAINS = new Set([
   'guerrillamail.com','yopmail.com','throwaway.email','sharklasers.com',
   'trashmail.com','dispostable.com','maildrop.cc','10minutemail.com',
   'temp-mail.org','getnada.com','spamgourmet.com','grr.la','spam4.me',
-  'boun.cr','spamgourmet.net','trashmail.net','discard.email',
 ]);
 
 // ── Trusted domains for client auto-reply ──
@@ -183,7 +189,7 @@ module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // ── API Secret header check ──
+  // ── API Secret ──
   const apiSecret = req.headers["x-api-secret"];
   if (!apiSecret || apiSecret !== process.env.API_SECRET) {
     return res.status(403).json({ error: "Forbidden" });
@@ -199,47 +205,34 @@ module.exports = async function handler(req, res) {
   const {
     name, email, phone, projectType, message,
     honeypot, recaptchaToken, formTimestamp,
-    mathAnswer, mathA, mathB, mathOp
+    mathAnswer, mathExpected
   } = req.body || {};
 
-  // ── Honeypot check ──
+  // ── Honeypot ──
   if (honeypot && honeypot.trim() !== "") {
-    console.log("Bot caught by honeypot");
-    return res.status(200).json({ success: true }); // silent reject
+    console.log("Bot caught: honeypot");
+    return res.status(200).json({ success: true });
   }
 
-  // ── Timestamp check (bots submit instantly) ──
+  // ── Timestamp ──
   if (!verifyTimestamp(formTimestamp)) {
-    console.log("Bot caught by timestamp:", formTimestamp);
+    console.log("Bot caught: timestamp");
     return res.status(400).json({ error: "Form submission invalid. Please reload and try again." });
   }
 
-  // ── Math CAPTCHA check (compute expected server-side from operands)
-  const a = parseInt(mathA);
-  const b = parseInt(mathB);
-  const op = (mathOp || '').toString();
-  if (Number.isNaN(a) || Number.isNaN(b) || !op) {
-    console.log("Invalid math captcha payload");
-    return res.status(400).json({ error: "Incorrect answer. Please reload the page and try again." });
-  }
-  let expected;
-  if (op === '+') expected = a + b;
-  else if (op === '-') expected = a - b;
-  else if (op === '×' || op === 'x' || op === '*') expected = a * b;
-  else expected = null;
-  const submitted = parseInt(mathAnswer);
-  if (expected === null || Number.isNaN(submitted) || submitted !== expected) {
-    console.log("Bot caught by math captcha");
+  // ── Math CAPTCHA ──
+  if (!mathAnswer || !mathExpected || String(mathAnswer).trim() !== String(mathExpected).trim()) {
+    console.log("Bot caught: math captcha");
     return res.status(400).json({ error: "Incorrect answer. Please solve the math question." });
   }
 
-  // ── reCAPTCHA v3 ──
+  // ── reCAPTCHA ──
   if (!recaptchaToken) {
     return res.status(400).json({ error: "reCAPTCHA missing. Please try again." });
   }
   const isHuman = await verifyRecaptcha(recaptchaToken);
   if (!isHuman) {
-    console.log("Bot caught by reCAPTCHA");
+    console.log("Bot caught: reCAPTCHA");
     return res.status(400).json({ error: "Bot detected. Please try again." });
   }
 
@@ -268,37 +261,31 @@ module.exports = async function handler(req, res) {
     message: sanitize(message),
   };
 
-  try {
-    const transporter = getTransporter();
-    const { adminHtml, clientHtml } = buildEmails(lead);
+  const { adminHtml, clientHtml } = buildEmails(lead);
 
-    // ── Send admin email (must succeed) ──
-    await transporter.sendMail({
-      from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
-      to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
+  try {
+    // ── Admin email (must succeed) ──
+    await sendEmail({
+      to: process.env.ADMIN_EMAIL || "sciencedotbusiness@gmail.com",
       subject: `🔔 New Lead: ${lead.name} — ${lead.projectType}`,
       html: adminHtml,
     });
 
-    // ── Send client auto-reply (trusted domains only) ──
+    // ── Client auto-reply (trusted domains only, non-blocking) ──
     if (TRUSTED_DOMAINS.has(emailDomain)) {
-      transporter.sendMail({
-        from: `"GeLoper Technology" <${process.env.GMAIL_USER}>`,
+      sendEmail({
         to: lead.email,
         subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
         html: clientHtml,
       }).catch(err => console.error("Client email failed:", err.message));
     }
 
-    // ── Log to Notion (non-blocking) ──
+    // ── Notion (non-blocking) ──
     logLeadToNotion(lead).catch(err => console.error("Notion failed:", err.message));
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Admin email error:", err.message, err.responseCode);
-    if (err.responseCode === 550 || err.responseCode === 554) {
-      return res.status(503).json({ error: "Mail server issue. Please WhatsApp us directly." });
-    }
+    console.error("Email error:", err.message);
     return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 };
