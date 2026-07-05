@@ -49,7 +49,8 @@ async function verifyRecaptcha(token) {
 function verifyTimestamp(ts) {
   if (!ts) return false;
   const diff = Date.now() - parseInt(ts);
-  return diff > 3000 && diff < 10 * 60 * 1000;
+  // Min 1.5 seconds (real users take time), max 30 minutes
+  return diff > 1500 && diff < 30 * 60 * 1000;
 }
 
 // ── Send email via Resend ──

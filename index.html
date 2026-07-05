@@ -13,7 +13,7 @@
 <meta name="keywords" content="web development Chennai, app development India, website design Chennai, React developer Chennai, Flutter app Chennai, e-commerce development India, affordable web development, GeLoper Technology"/>
 <meta name="author" content="GeLoper Technology"/>
 <meta name="robots" content="index, follow"/>
-<meta name="x-gs" content="gelopertechnologyvarun@@2008"/>
+<meta name="x-gs" content="REPLACE_WITH_YOUR_API_SECRET"/>
 <meta name="theme-color" content="#1D9E75"/>
 <link rel="canonical" href="https://gelopertechnology.vercel.app"/>
 
@@ -774,10 +774,7 @@ footer{background:var(--text);color:#fff;padding:3.5rem clamp(1rem,4vw,2.5rem) 2
         <div class="math-captcha">
           <label>Prove you're human:</label>
           <span class="math-question" id="mathQuestion">...</span>
-            <input type="number" class="math-input" id="f-math" placeholder="?" required autocomplete="off"/>
-            <input type="hidden" id="f-math-a" name="mathA" />
-            <input type="hidden" id="f-math-b" name="mathB" />
-            <input type="hidden" id="f-math-op" name="mathOp" />
+          <input type="number" class="math-input" id="f-math" placeholder="?" required autocomplete="off"/>
         </div>
         <button type="submit" class="form-submit" id="submitBtn">Send Message →</button>
         <div class="form-success" id="formSuccess">✅ Message sent! We'll get back to you within 24 hours.</div>
@@ -855,17 +852,19 @@ function generateMath() {
   mathExpected = ans;
   document.getElementById('mathQuestion').textContent = `${a} ${op} ${b} = ?`;
   document.getElementById('f-math').value = '';
-  // store operands/operator in hidden inputs so server can validate
-  const elA = document.getElementById('f-math-a');
-  const elB = document.getElementById('f-math-b');
-  const elOp = document.getElementById('f-math-op');
-  if (elA) elA.value = a;
-  if (elB) elB.value = b;
-  if (elOp) elOp.value = op;
 }
 
-// ── Form load timestamp ──
-const formLoadTime = Date.now();
+// ── Form load timestamp — set when contact section is visible ──
+let formLoadTime = Date.now();
+const contactObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      formLoadTime = Date.now();
+    }
+  });
+}, { threshold: 0.1 });
+const contactSection = document.getElementById('contact');
+if (contactSection) contactObserver.observe(contactSection);
 
 // ── Initialize on page load ──
 window.addEventListener('load', function() {
@@ -915,15 +914,13 @@ async function handleSubmit(e){
         'x-api-secret': window.__GS__ || ''
       },
       body:JSON.stringify({
-          name,email,phone,projectType,message,
-          honeypot,
-          recaptchaToken,
-          formTimestamp: formLoadTime,
-          mathAnswer: parseInt(mathAnswer),
-          mathA: document.getElementById('f-math-a')?.value,
-          mathB: document.getElementById('f-math-b')?.value,
-          mathOp: document.getElementById('f-math-op')?.value,
-        }),
+        name,email,phone,projectType,message,
+        honeypot,
+        recaptchaToken,
+        formTimestamp: formLoadTime,
+        mathAnswer: parseInt(mathAnswer),
+        mathExpected: mathExpected,
+      }),
     });
     const data=await res.json();
     if(res.ok&&data.success){
