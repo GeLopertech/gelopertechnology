@@ -258,21 +258,33 @@ module.exports = async function handler(req, res) {
       html: adminHtml,
     });
 
-    // ── Client auto-reply (trusted domains only, non-blocking) ──
+    // ── Client auto-reply (trusted domains only) ──
     if (TRUSTED_DOMAINS.has(emailDomain)) {
-      sendEmail({
-        to: lead.email,
-        subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
-        html: clientHtml,
-      }).catch(err => console.error("Client email failed:", err.message));
+      try {
+        await sendEmail({
+          to: lead.email,
+          subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
+          html: clientHtml,
+        });
+        console.log("✅ Client email sent to:", lead.email);
+      } catch (err) {
+        console.error("❌ Client email failed:", err.message);
+      }
+    } else {
+      console.log("ℹ️ Client email skipped (not trusted domain):", emailDomain);
     }
 
-    // ── Notion (non-blocking) ──
-    logLeadToNotion(lead).catch(err => console.error("Notion failed:", err.message));
+    // ── Notion ──
+    try {
+      await logLeadToNotion(lead);
+      console.log("✅ Notion logged");
+    } catch (err) {
+      console.error("❌ Notion failed:", err.message);
+    }
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Email error:", err.message);
+    console.error("❌ Admin email error:", err.message);
     return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 };
