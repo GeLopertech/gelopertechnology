@@ -854,17 +854,7 @@ function generateMath() {
   document.getElementById('f-math').value = '';
 }
 
-// ── Form load timestamp — set when contact section is visible ──
-let formLoadTime = Date.now();
-const contactObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      formLoadTime = Date.now();
-    }
-  });
-}, { threshold: 0.1 });
-const contactSection = document.getElementById('contact');
-if (contactSection) contactObserver.observe(contactSection);
+
 
 // ── Initialize on page load ──
 window.addEventListener('load', function() {
@@ -917,7 +907,6 @@ async function handleSubmit(e){
         name,email,phone,projectType,message,
         honeypot,
         recaptchaToken,
-        formTimestamp: formLoadTime,
         mathAnswer: parseInt(mathAnswer),
         mathExpected: mathExpected,
       }),

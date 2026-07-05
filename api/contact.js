@@ -45,14 +45,6 @@ async function verifyRecaptcha(token) {
   }
 }
 
-// ── Timestamp check (bots submit instantly) ──
-function verifyTimestamp(ts) {
-  if (!ts) return false;
-  const diff = Date.now() - parseInt(ts);
-  // Min 1.5 seconds (real users take time), max 30 minutes
-  return diff > 1500 && diff < 30 * 60 * 1000;
-}
-
 // ── Send email via Resend ──
 async function sendEmail({ to, subject, html }) {
   const res = await fetch("https://api.resend.com/emails", {
@@ -205,7 +197,7 @@ module.exports = async function handler(req, res) {
   // ── Safe destructure ──
   const {
     name, email, phone, projectType, message,
-    honeypot, recaptchaToken, formTimestamp,
+    honeypot, recaptchaToken,
     mathAnswer, mathExpected
   } = req.body || {};
 
@@ -213,12 +205,6 @@ module.exports = async function handler(req, res) {
   if (honeypot && honeypot.trim() !== "") {
     console.log("Bot caught: honeypot");
     return res.status(200).json({ success: true });
-  }
-
-  // ── Timestamp ──
-  if (!verifyTimestamp(formTimestamp)) {
-    console.log("Bot caught: timestamp");
-    return res.status(400).json({ error: "Form submission invalid. Please reload and try again." });
   }
 
   // ── Math CAPTCHA ──
