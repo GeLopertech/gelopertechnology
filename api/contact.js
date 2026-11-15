@@ -117,19 +117,24 @@ async function verifyRecaptcha(token) {
 }
 
 // ── Send email via Resend ──
-async function sendEmail({ to, subject, html }) {
+async function sendEmail({ to, subject, html, replyTo }) {
+  const payload = {
+    from: process.env.FROM_EMAIL || "GeLoper Technology <hello@gelopertechnology.in>",
+    to,
+    subject,
+    html,
+  };
+  if (replyTo) {
+    payload.reply_to = replyTo;
+  }
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: "GeLoper Technology <onboarding@resend.dev>",
-      to,
-      subject,
-      html,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -341,6 +346,7 @@ module.exports = async function handler(req, res) {
       to: process.env.ADMIN_EMAIL || "sciencedotbusiness@gmail.com",
       subject: `🔔 New Lead: ${lead.name} — ${lead.projectType}`,
       html: adminHtml,
+      replyTo: lead.email,
     });
 
     // ── Client auto-reply (trusted domains only) ──
@@ -350,6 +356,7 @@ module.exports = async function handler(req, res) {
           to: lead.email,
           subject: `We got your message, ${lead.name}! 🚀 — GeLoper Technology`,
           html: clientHtml,
+          replyTo: process.env.ADMIN_EMAIL || "sciencedotbusiness@gmail.com",
         });
         console.log("✅ Client email sent to:", lead.email);
       } catch (err) {
