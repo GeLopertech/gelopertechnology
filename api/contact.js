@@ -1,20 +1,87 @@
 // api/contact.js — Resend + Notion + Goat-level security
 
-// ── Rate limiter (2 per 10 mins per IP) ──
-const rateLimit = new Map();
-const RATE_LIMIT = 2;
-const RATE_WINDOW = 10 * 60 * 1000;
+const crypto = require("crypto");
 
-function isRateLimited(ip) {
+// ── Rate limiter (2 per 10 mins per IP) ──
+// Uses Upstash Redis (REST) so the limit is shared across all serverless
+// instances. Falls back to an in-memory Map only if Upstash isn't configured
+// (best-effort — not reliable on serverless).
+const RATE_LIMIT = 2;
+const RATE_WINDOW_SEC = 10 * 60;
+const memoryRateLimit = new Map();
+
+async function upstash(command) {
+  const res = await fetch(process.env.UPSTASH_REDIS_REST_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(command),
+  });
+  if (!res.ok) throw new Error(`Upstash ${res.status}`);
+  const data = await res.json();
+  return data.result;
+}
+
+async function isRateLimited(ip) {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const key = `rl:contact:${ip}`;
+    try {
+      const count = await upstash(["INCR", key]);
+      if (count === 1) await upstash(["EXPIRE", key, RATE_WINDOW_SEC]);
+      return count > RATE_LIMIT;
+    } catch (e) {
+      console.error("Rate limit store error:", e.message);
+      return true; // fail closed
+    }
+  }
+
+  console.warn("Upstash not configured — using in-memory rate limit (unreliable on serverless).");
   const now = Date.now();
-  const entry = rateLimit.get(ip) || { count: 0, start: now };
-  if (now - entry.start > RATE_WINDOW) {
-    rateLimit.set(ip, { count: 1, start: now });
+  const entry = memoryRateLimit.get(ip);
+  if (!entry || now - entry.start > RATE_WINDOW_SEC * 1000) {
+    memoryRateLimit.set(ip, { count: 1, start: now });
     return false;
   }
   if (entry.count >= RATE_LIMIT) return true;
-  rateLimit.set(ip, { count: entry.count + 1, start: entry.start });
+  entry.count++;
   return false;
+}
+
+// ── Signed math CAPTCHA ──
+// The server generates the question and returns an HMAC-signed token.
+// The correct answer is never sent to the browser, so it can't be forged.
+const CAPTCHA_TTL_MS = 10 * 60 * 1000;
+
+function signCaptcha(answer, expires) {
+  return crypto
+    .createHmac("sha256", process.env.CAPTCHA_SECRET)
+    .update(`${answer}.${expires}`)
+    .digest("hex");
+}
+
+function createCaptcha() {
+  const r = (n) => crypto.randomInt(n);
+  const ops = ["+", "-", "×"];
+  const op = ops[r(3)];
+  let a, b, ans;
+  if (op === "+") { a = r(20) + 1; b = r(20) + 1; ans = a + b; }
+  else if (op === "-") { a = r(20) + 10; b = r(10) + 1; ans = a - b; }
+  else { a = r(9) + 2; b = r(9) + 2; ans = a * b; }
+  const expires = Date.now() + CAPTCHA_TTL_MS;
+  return { question: `${a} ${op} ${b} = ?`, token: `${expires}.${signCaptcha(ans, expires)}` };
+}
+
+function verifyCaptcha(answer, token) {
+  if (answer === undefined || answer === null || typeof token !== "string") return false;
+  const [expiresStr, sig] = token.split(".");
+  const expires = Number(expiresStr);
+  if (!expires || !sig || Date.now() > expires) return false;
+  const expected = signCaptcha(String(answer).trim(), expires);
+  const a = Buffer.from(sig, "hex");
+  const b = Buffer.from(expected, "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 // ── Sanitize ──
@@ -31,11 +98,15 @@ function sanitize(str) {
 async function verifyRecaptcha(token) {
   try {
     const secret = process.env.RECAPTCHA_SECRET_KEY;
-    if (!secret) return true;
-    const res = await fetch(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
-      { method: "POST" }
-    );
+    if (!secret) {
+      console.error("RECAPTCHA_SECRET_KEY not set — rejecting request.");
+      return false; // fail closed
+    }
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: String(token) }),
+    });
     const data = await res.json();
     console.log("reCAPTCHA score:", data.score);
     return data.success && data.score >= 0.5;
@@ -150,6 +221,8 @@ async function logLeadToNotion(lead) {
 
 // ── Allowed origins ──
 const ALLOWED_ORIGINS = [
+  "https://gelopertechnology.in",
+  "https://www.gelopertechnology.in",
   "https://gelopertechnology.vercel.app",
   "http://localhost:3000",
   "http://127.0.0.1:5500",
@@ -177,20 +250,32 @@ module.exports = async function handler(req, res) {
   if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-secret");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Vary", "Origin");
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  if (!process.env.CAPTCHA_SECRET) {
+    console.error("CAPTCHA_SECRET not set.");
+    return res.status(500).json({ error: "Server misconfigured." });
+  }
+
+  // ── Issue a new signed math challenge ──
+  if (req.method === "GET") {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json(createCaptcha());
+  }
+
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // ── API Secret ──
-  const apiSecret = req.headers["x-api-secret"];
-  if (!apiSecret || apiSecret !== process.env.API_SECRET) {
+  // ── Origin check (browsers always send Origin on cross-site/fetch POSTs) ──
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
   // ── Rate limiting ──
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown";
-  if (isRateLimited(ip)) {
+  const ip = req.headers["x-real-ip"] || req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown";
+  if (await isRateLimited(ip)) {
     return res.status(429).json({ error: "Too many requests. Please wait 10 minutes." });
   }
 
@@ -198,17 +283,17 @@ module.exports = async function handler(req, res) {
   const {
     name, email, phone, projectType, message,
     honeypot, recaptchaToken,
-    mathAnswer, mathExpected
+    mathAnswer, mathToken
   } = req.body || {};
 
   // ── Honeypot ──
-  if (honeypot && honeypot.trim() !== "") {
+  if (honeypot && String(honeypot).trim() !== "") {
     console.log("Bot caught: honeypot");
     return res.status(200).json({ success: true });
   }
 
-  // ── Math CAPTCHA ──
-  if (!mathAnswer || !mathExpected || String(mathAnswer).trim() !== String(mathExpected).trim()) {
+  // ── Math CAPTCHA (server-signed) ──
+  if (!verifyCaptcha(mathAnswer, mathToken)) {
     console.log("Bot caught: math captcha");
     return res.status(400).json({ error: "Incorrect answer. Please solve the math question." });
   }
